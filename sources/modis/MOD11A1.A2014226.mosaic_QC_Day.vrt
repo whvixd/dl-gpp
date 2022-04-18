@@ -1,0 +1,21 @@
+<VRTDataset rasterXSize="2400" rasterYSize="1200">
+	<SRS>PROJCS["unnamed",GEOGCS["Unknown datum based upon the custom spheroid",DATUM["Not specified (based on custom spheroid)",SPHEROID["Custom spheroid",6371007.181,0]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]]],PROJECTION["Sinusoidal"],PARAMETER["longitude_of_center",0],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["Meter",1],AXIS["Easting",EAST],AXIS["Northing",NORTH]]</SRS>
+	<GeoTransform>0.0, 926.6254331391667, 0, 5559752.598833, 0, -926.625433139167</GeoTransform>
+	<VRTRasterBand dataType="Byte" band="1">
+<ColorInterp>Gray</ColorInterp>
+		<ComplexSource>
+			<SourceFilename relativeToVRT="0">HDF4_EOS:EOS_GRID:./sources/modis/MOD11A1.A2014226.h18v04.006.2016206155244.hdf:MODIS_Grid_Daily_1km_LST:QC_Day</SourceFilename>
+			<SourceBand>1</SourceBand>
+			<SourceProperties RasterXSize="1200" RasterYSize="1200" DataType="Byte" BlockXSize="1200" BlockYSize="833" />
+			<SrcRect xOff="0" yOff="0" xSize="1200" ySize="1200" />
+			<DstRect xOff="0" yOff="0" xSize="1200" ySize="1200" />
+		</ComplexSource>
+		<ComplexSource>
+			<SourceFilename relativeToVRT="0">HDF4_EOS:EOS_GRID:./sources/modis/MOD11A1.A2014226.h19v04.006.2016206155246.hdf:MODIS_Grid_Daily_1km_LST:QC_Day</SourceFilename>
+			<SourceBand>1</SourceBand>
+			<SourceProperties RasterXSize="1200" RasterYSize="1200" DataType="Byte" BlockXSize="1200" BlockYSize="833" />
+			<SrcRect xOff="0" yOff="0" xSize="1200" ySize="1200" />
+			<DstRect xOff="1200" yOff="0" xSize="1200" ySize="1200" />
+		</ComplexSource>
+	</VRTRasterBand>
+</VRTDataset>
