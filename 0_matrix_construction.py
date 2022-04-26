@@ -16,6 +16,7 @@ password = a[3]
 tiles = a[4].split()
 today = a[5]
 enddate = a[6]
+# 让输出成的文件格式以它为标准
 referenceImage = a[7]
 # python -u 0_matrix_construction.py 1 /data/emily/SL
 # myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
@@ -48,16 +49,16 @@ if spectral == '1':
         os.mkdir(directory)
     if not os.path.exists(directory + '/spectral'):
         os.mkdir(directory + '/spectral')
-    mod09 = ap.MOD09A1(directory=directory + '/spectral', username=username, password=password, dataset='MOD09A1.005',
+    mod09 = ap.MOD09A1(directory=directory + '/spectral', username=username, password=password, dataset='MOD09A1.006',
                        subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
 
     mod09.prepare()
-    if os.path.isfile(directory + '/MOD13Q1.005.npy'):
+    if os.path.isfile(directory + '/MOD13Q1.006.npy'):
         subprocess.call(['cp', directory + 'MOD13Q1.npy', directory + 'MOD13Q1.txt', directory + '/spectral'])
     else:
         mod13 = ap.MOD13Q1(directory=directory + '/spectral', username=username, password=password,
-                           dataset='MOD13Q1.005', subset='1 0 1 0 0 0 0 0 0 0 0 1',
+                           dataset='MOD13Q1.006', subset='1 0 1 0 0 0 0 0 0 0 0 1',
                            tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
         mod13.prepare()
 

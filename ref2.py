@@ -5,7 +5,7 @@ from pymodis import downmodis
 from topng import hdf2png
 
 # ##############下载##############
-dest = "./sources/modis"
+dest = "./sources1/modis"
 
 # self._getUsedLayers() 获取层级，1：需要，0：不需要提取
 subset = [1, 1, 0, 0, 1, 1]
@@ -19,13 +19,13 @@ def downloan():
     # number of day to download
     delta = 1
 
-    # modisDown = downmodis.downModis(destinationFolder=dest, tiles=tiles, today=day, delta=delta,
-    #                             user='whvixd',password='1130Wang1130')
-    # print("downmodis.downModis")
-    # modisDown.connect()
-    # print("downmodis.connect")
-    # modisDown.downloadsAllDay()
-    # print("modisDown.downloadsAllDay")
+    modisDown = downmodis.downModis(destinationFolder=dest, tiles=tiles, today=day, delta=delta,
+                                user='whvixd',password='1130Wang1130')
+    print("downmodis.downModis")
+    modisDown.connect()
+    print("downmodis.connect")
+    modisDown.downloadsAllDay()
+    print("modisDown.downloadsAllDay")
 
     # create the list of files to use
     files = glob.glob(os.path.join(dest, 'MOD11A1.A2014*.hdf'))
@@ -132,7 +132,7 @@ def convert(files):
 if __name__ == '__main__':
     files=downloan()
     # parse(files)
-    mosaic(files)
+    # mosaic(files)
     # convert(files)
     from osgeo import gdal
 
