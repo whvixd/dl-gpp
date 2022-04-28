@@ -1,9 +1,8 @@
 # coding=utf-8
 import sys
-import agpredict as ap
+from src.main.common import agpredict as ap
 import os
 import subprocess
-import argparse
 
 my_args = sys.argv
 print("Running script:", sys.argv[0])

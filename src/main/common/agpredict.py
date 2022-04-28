@@ -15,6 +15,7 @@ represents a point in time.
 @author: Emily Burchfield
 """
 
+# 依赖 操作系统中的 gdal 软件，mac需要 brew install gdal
 try:
     import osgeo.gdal as gdal
 except ImportError:
@@ -48,6 +49,7 @@ import glob
 import subprocess
 from abc import ABCMeta, abstractmethod
 import logger
+
 #from __future__ import division 
 
 
