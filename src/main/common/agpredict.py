@@ -177,7 +177,7 @@ class Image(object):
         self.filelist = dm.getListDays() 
         self.observations = len(dm.getListDays())  
         
-        if self.dataset != 'MOD13Q1.005':
+        if self.dataset != 'MOD13Q1.006':
              if self.observations % 2 != 0:
                  raise IOError("The total number of observations through time must be an even number. Please add or remove an observation before or after %s" % str(self.filelist[0]))
                      
@@ -188,7 +188,7 @@ class Image(object):
         
         """
 		If more than two tiles are input by the user, this function mosaics the tiles
-		together.		
+		together.		如果用户输入的图像块超过两个，则该函数将这些图像块拼接在一起。
 		"""
         
         if len(self.tiles) > 1:
@@ -206,9 +206,10 @@ class Image(object):
 		This function converts the HDF files into the file extension of the 
 		referenceImage.  It projects images into the projection of the referenceImage using the vrt files produced in the mosaic step.  
         If no vrt files were produced in the previous step, it converts the original hdf files.  
-		
+
+		这个函数将HDF文件转换为referenceImage的文件扩展名。它使用拼接步骤中生成的vrt文件将图像投射到referenceImage的投影中。如果在上一步中没有生成vrt文件，它将转换原始的hdf文件。
 		"""
-        # 这个函数将HDF文件转换为referenceImage的文件扩展名。它使用拼接步骤中生成的vrt文件将图像投射到referenceImage的投影中。如果在上一步中没有生成vrt文件，它将转换原始的hdf文件。
+
         
         vrtlist = sorted(glob.glob(self.fullPath + '/*vrt'))
         splitAt = len(self.fullPath) + 1
@@ -478,11 +479,13 @@ class Image(object):
     
     def prepare(self):
         self.download()
-        # hdf -> tif
+        # 拼接
         self.mosaic()
-        # -> vrt
+        # 投影 转换成参考图像的扩展名
         self.convert()
+        # 裁剪 成参考图像的大小
         self.clip()
+        # 转成矩阵
         self.matrix() 
         self.quality()
         self.qualityCheck()
@@ -625,14 +628,13 @@ class MOD09A1(Image):
         self.referenceImagePath = referenceImage
         self.extent = self.fullPath + '/referenceExtent.shp' 
         self.referenceImage = gdal.Open(referenceImage)
-        self.referenceImage = gdal.Open(referenceImage)
         self.projection = self.referenceImage.GetProjection()
         geotransform = self.referenceImage.GetGeoTransform()
         self.resolution = geotransform[1]
         self.rows = self.referenceImage.RasterYSize
         self.columns = self.referenceImage.RasterXSize
         self.outformat = self.referenceImage.GetDriver().ShortName
-        
+
         self.scale = [.0001, .0001, .0001, .0001, .0001, .0001, .0001, 1, .01, .01, .01, 1, 1]
         self.varNames = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'Quality 32', 'Solar Zenith', 'View Zenith', 'Relative Azimuth', 'Quality', 'DOY']
         self.qualityBand = 11
