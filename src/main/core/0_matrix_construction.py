@@ -1,6 +1,6 @@
 # coding=utf-8
 import sys
-from src.main.common import agpredict as ap
+import agpredict as ap
 import os
 import subprocess
 
@@ -17,6 +17,7 @@ today = a[5]
 enddate = a[6]
 # 让输出成的文件格式以它为标准
 referenceImage = a[7]
+downloadF=a[8]
 # python -u 0_matrix_construction.py 1 /data/emily/SL
 # myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
 if spectral == '0':
@@ -48,9 +49,10 @@ if spectral == '1':
         os.mkdir(directory)
     if not os.path.exists(directory + '/spectral'):
         os.mkdir(directory + '/spectral')
+
     mod09 = ap.MOD09A1(directory=directory + '/spectral', username=username, password=password, dataset='MOD09A1.006',
                        subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage,downloadF=downloadF)
 
     mod09.prepare()
     if os.path.isfile(directory + '/MOD13Q1.006.npy'):
@@ -67,5 +69,5 @@ if spectral == '1':
 # python -u 0_matrix_construction.py 1 /data/emily/SL myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
 
 '''
-/Users/didi/opt/anaconda3/envs/dl-gpp/bin/python -u 0_matrix_construction.py 1 /tmp/whvixd/SL whvixd 1130Wang1130 'h25v08 h26v08' 2014-01-30 2014-01-01 /tmp/whvixd/WF/NDVI_DC/SL.tif
+/Users/whvixd/opt/anaconda3/envs/python37/bin/python -u 0_matrix_construction.py 1 /Users/whvixd/Documents/individual/MODIS/dataset/SL whvixd 1130Wang1130 'h25v08 h26v08' 2014-01-30 2014-01-01 /Users/whvixd/Documents/individual/MODIS/dataset/SL/SL.tif
 '''
