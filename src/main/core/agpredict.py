@@ -224,6 +224,7 @@ class ModisImageBase(object):
 		together.		如果用户输入的图像块超过两个，则该函数将这些图像块拼接在一起。
 		"""
 
+        logging.debug('Mosaic start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         if len(self.tiles) > 1:
             # 获取所有的hdf文件
             hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
@@ -237,8 +238,9 @@ class ModisImageBase(object):
                 ms.write_vrt(output=str(hdflist[i].split('.h')[0]), separate=True)
             mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
 
-            logging.info('Mosaic complete!  MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
-                str(self.tiles), mosaicCount))
+            logging.info(
+                'Mosaic complete! DataSet:%s, MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
+                    self.dataset, str(self.tiles), mosaicCount))
 
     def convert(self):
 
@@ -250,6 +252,8 @@ class ModisImageBase(object):
 		这个函数将HDF文件转换为referenceImage的文件扩展名。它使用拼接步骤中生成的vrt文件将图像投射到referenceImage的投影中。
 		如果在上一步中没有生成vrt文件，它将转换原始的hdf文件。
 		"""
+
+        logging.debug('Convert start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
 
         vrtlist = sorted(glob.glob(self.fullPath + '/*vrt'))
         splitAt = len(self.fullPath) + 1
@@ -276,8 +280,8 @@ class ModisImageBase(object):
             dataCount = self.subset.count('1')
 
             logging.info(
-                'Conversion complete!  The %d bands of %d mosaicked images were successfully converted to %d %s files.' % (
-                    dataCount, len(vrtlist), tifCount, str(self.outformat)))
+                'Conversion complete! DataSet:%s, The %d bands of %d mosaicked images were successfully converted to %d %s files.' % (
+                    self.dataset, dataCount, len(vrtlist), tifCount, str(self.outformat)))
 
         if len(vrtlist) == 0:
 
@@ -313,8 +317,8 @@ class ModisImageBase(object):
             dataCount = self.subset.count('1')
 
             logging.info(
-                'Conversion complete!  The %d bands of %d HDF files were successfully converted to %d %s files.' % (
-                    dataCount, len(hdflist), tifCount, str(self.outformat)))
+                'Conversion complete! DataSet:%s, The %d bands of %d HDF files were successfully converted to %d %s files.' % (
+                    self.dataset, dataCount, len(hdflist), tifCount, str(self.outformat)))
 
     def clip(self):
 
@@ -325,6 +329,9 @@ class ModisImageBase(object):
 		这个函数将拼接的投影图像剪辑到referenceImage的大小
 		"""
         # 此程序生成一个shapefile，其中包含每个输入栅格文件的记录、包含文件名的属性以及概述栅格的多边形几何图形。此输出适用于 MapServer 作为栅格tileindex。
+
+        logging.debug('Clip start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
+
         subprocess.call(['gdaltindex', self.extent, self.referenceImagePath])
         dataNames = sorted(glob.glob(self.fullPath + '/full*.tif'))
         splitAt = len(self.fullPath) + 1
@@ -342,8 +349,9 @@ class ModisImageBase(object):
         test = gdal.Open(dataNames[0]).ReadAsArray()
 
         logging.info(
-            'Clipping complete!  %d %s files  were successfully clipped to the size of %s with dimensions %d rows by %d columns' % (
-                len(dataNames), str(self.outformat), str(self.referenceImagePath), test.shape[0], test.shape[1]))
+            'Clipping complete! DataSet:%s, %d %s files  were successfully clipped to the size of %s with dimensions %d rows by %d columns' % (
+                self.dataset, len(dataNames), str(self.outformat), str(self.referenceImagePath), test.shape[0],
+                test.shape[1]))
 
     def matrix(self):
 
@@ -357,6 +365,7 @@ class ModisImageBase(object):
 		该矩阵包括质量掩码数据集。为了进行质量控制，这个矩阵还没有被掩盖。
 		"""
 
+        logging.debug('Matrix start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         dataCount = self.subset.count('1')
         dataNames = sorted(glob.glob(self.fullPath + '/*.tif'))
         dataNames = dataNames[0:dataCount]
@@ -365,7 +374,8 @@ class ModisImageBase(object):
         DC = np.empty(shape=(self.rows * self.columns * self.observations, 0))
         DCs = np.empty(shape=(self.rows * self.columns * self.observations, subsetInt.count(1)))
 
-        print('self.rows:',self.rows,self.columns,self.observations,subsetInt.count(1))
+        logging.debug('combining data start, DataSet:%s,rows:%d,columns:%d,observations:%d,count(subset==1):%d' %
+                      (self.dataset, self.rows, self.columns, self.observations, subsetInt.count(1)))
         # 数据类型
         for i in range(dataCount):
             name = str(dataNames[i])
@@ -379,6 +389,11 @@ class ModisImageBase(object):
                 bandDC = np.append(bandDC, vec, axis=0)
             DC = np.append(DC, bandDC, axis=1)
             del vec, bandDC, data
+            logging.debug('combining data complete, DataSet:%s,dataName:%s,dataList:%s,DC.shape:%s' %
+                          (self.dataset, name, dataList, str(DC.shape)))
+
+        logging.debug('apply fill values,DataSet:%s,fillValue:%s' %
+                      (self.dataset, str(self.fillValue)))
 
         # apply fill values
         if self.dataset == 'MOD15A2.005' or self.dataset == 'MOD17A2.005':
@@ -406,8 +421,9 @@ class ModisImageBase(object):
             f.write(' '.join(["self.%s = %s" % (k, v) for k, v in self.__dict__.items()]))
 
         logging.info(
-            'The %s data was transformed into an array with dimensions %d rows by %d columns.  No data value set to 9999.  A metadata file with object attributes was created.  To access the matrix, simply call object.DC' % (
-                str(self.outformat), self.DC.shape[0], self.DC.shape[1]))
+            'DataSet:%s.The %s data was transformed into an array with dimensions %d rows by %d columns.  No data value set to 9999. '
+            ' A metadata file with object attributes was created.  To access the matrix, simply call object.DC' % (
+                self.dataset, str(self.outformat), self.DC.shape[0], self.DC.shape[1]))
 
         tif = sorted(glob.glob(self.fullPath + '/*.tif'))
         for t in tif:
@@ -421,6 +437,7 @@ class ModisImageBase(object):
         该函数将MODIS质量掩码应用于数据集。蒙面像素的值为9999.0。
         """
 
+        logging.debug('Quality start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         subsetInt = [int(s) for s in self.subset.split() if s.isdigit()]
         columnNames = []
         for i in range(len(subsetInt)):
@@ -444,7 +461,7 @@ class ModisImageBase(object):
             DCm = np.ma.masked_where(QCm == 1, DCm)
             DCm = np.ma.masked_where(DCm == 9999.0, DCm)
 
-            obs:int = 0
+            obs: int = 0
             if len(self.tiles) > 1:
                 obs = (int)(self.observations / len(self.tiles))
             if len(self.tiles) == 1:
@@ -473,13 +490,13 @@ class ModisImageBase(object):
             var = [a for a in columnNames if not a.startswith('Quality')]
 
             logging.info(
-                'The final 16-day interval quality-masked matrix was created successfully.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
-                    self.finalDC.shape[0], self.finalDC.shape[1], var))
+                'DataSet:%s.The final 16-day interval quality-masked matrix was created successfully.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
+                    self.dataset, self.finalDC.shape[0], self.finalDC.shape[1], var))
 
         if subsetInt[self.qualityBand] != 1:
             cleanDC = np.delete(self.DC, q, 1)
 
-            obs:int=0
+            obs: int = 0
             if len(self.tiles) > 1:
                 obs = (int)(self.observations / len(self.tiles))
             if len(self.tiles) == 1:
@@ -505,10 +522,11 @@ class ModisImageBase(object):
             var = [a for a in columnNames if not a.startswith('Quality')]
 
             logging.info(
-                'The final 16-day interval matrix was created successfully.  A quality mask was not applied, though remaining no data values are set at 9999.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
-                    self.finalDC.shape[0], self.finalDC.shape[1], var))
+                'DataSet:%s.The final 16-day interval matrix was created successfully.  A quality mask was not applied, though remaining no data values are set at 9999.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
+                    self.dataset, self.finalDC.shape[0], self.finalDC.shape[1], var))
 
     def qualityCheck(self):
+        logging.debug('QualityCheck start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         d = self.fullPath
         dataset = self.dataset
 
@@ -541,7 +559,8 @@ class ModisImageBase(object):
 
         sys.stdout = sys.__stdout__
 
-        logging.info('See file qualityCheck%s.txt for detailed information about the final matrix.' % (self.dataset))
+        logging.info('DataSet:%s.See file qualityCheck%s.txt for detailed information about the final matrix.' % (
+        self.dataset, self.dataset))
 
     def prepare(self):
         # 下载数据
@@ -558,7 +577,7 @@ class ModisImageBase(object):
         self.qualityCheck()
 
     def finalMatrix(self):
-        obs:int=0
+        obs: int = 0
         if len(self.tiles) > 1:
             obs = (int)(self.observations / len(self.tiles))
         if len(self.tiles) == 1:
