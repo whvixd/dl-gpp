@@ -9,7 +9,7 @@ def wrapperLogging():
 
     # 按天记录日志
     file_run_log = logging.handlers.TimedRotatingFileHandler(
-        "../log/debug_" + time.strftime("%Y-%m-%d-%H_%M_%S", time.localtime()) + ".log", backupCount=0,
+        "../log/debug_" + time.strftime("%Y%m%d", time.localtime()) + ".log", backupCount=0,
         encoding='utf-8',
         when='D', interval=1)
 
