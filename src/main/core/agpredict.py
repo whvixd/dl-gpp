@@ -567,15 +567,15 @@ class ModisImageBase(object):
         # 下载数据
         self.download()
         # 拼接
-        self.mosaic()
+        # self.mosaic()
         # 投影 转换成参考图像的扩展名
-        self.convert()
+        # self.convert()
         # 裁剪 成参考图像的大小
-        self.clip()
+        # self.clip()
         # 转成矩阵
-        self.matrix()
-        self.quality()
-        self.qualityCheck()
+        # self.matrix()
+        # self.quality()
+        # self.qualityCheck()
 
     def finalMatrixFunction(self):
         logging.debug('FinalMatrixFunction start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
@@ -585,6 +585,7 @@ class ModisImageBase(object):
         if len(self.tiles) == 1:
             obs = (int)(self.observations / 2)
 
+        # 添加经纬度的列
         # create latitude/longitude grid
         xoff, a, b, yoff, d, e = self.referenceImage.GetGeoTransform()
 
@@ -626,6 +627,7 @@ class ModisImageBase(object):
             (self.dataset, lat.min(), lon.min()))
         del lat, lon
 
+        # 添加时间纬度的列
         # time array
         x = np.repeat(np.array(range(1, obs + 1)), self.rows * self.columns)
         time = np.reshape(x, (self.rows * self.columns * obs, 1))
@@ -641,10 +643,11 @@ class ModisImageBase(object):
             (self.dataset, time.max(), time.shape[0], time.shape[1]))
         del x, time
 
+        # 150的含义是？？？
         # autocorrelation
         lag = 150  # a changer?
-        grid_r = self.rows / lag
-        grid_c = self.columns / lag
+        grid_r = (int)(self.rows / lag)
+        grid_c = (int)(self.columns / lag)
         rem_r = self.rows % lag
         rem_c = self.columns % lag
 
@@ -677,6 +680,7 @@ class ModisImageBase(object):
                 with open(fname) as infile:
                     outfile.write(infile.read())
 
+        # 将 光谱纬度的数据合并到一个数组中 autocorrelationGrid.npy、MOD09A1.006.npy、MOD13Q1.006.npy
         matrixNames = sorted(glob.glob(self.directory + '/*.npy'))
         matrix = np.empty(shape=(self.rows * self.columns * obs, 0))
 

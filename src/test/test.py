@@ -103,5 +103,26 @@ class MyTestCase(unittest.TestCase):
         outArray = np.empty(shape=((int)(self.rows * self.columns * obs), 0))
         print(outArray.shape)
 
+    def test_grid_final(self):
+        self.rows = 4790
+        self.columns = 5455
+        self.observations = 4
+        self.subset = '1 1 1 1 1 1 1 0 0 0 0 1 0'
+
+        lag = 150  # a changer?
+        grid_r = (int)(self.rows / lag)
+        grid_c = (int)(self.columns / lag)
+        obs = (int)(self.observations / 2)
+
+        grid_id = (grid_r + 1) * (grid_c + 1)  # max ID number
+        idlist = np.arange(1, grid_id + 1).reshape((grid_r + 1, grid_c + 1))
+
+        grid = np.repeat(idlist, lag, axis=0)
+        grid = np.repeat(grid, lag, axis=1)
+
+        grid_sized = grid[0:self.rows, 0:self.columns].reshape((1, self.rows, self.columns))
+        grid_rep = np.repeat(grid_sized, obs, axis=0)
+        grid_final = grid_rep.reshape((obs * self.rows * self.columns, 1))
+
 if __name__ == '__main__':
     unittest.main()
