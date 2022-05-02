@@ -433,7 +433,7 @@ class ModisImageBase(object):
         if subsetInt[self.qualityBand] == 1:
             dataCount = self.subset.count('1')
             QC = np.repeat(self.DC[:, q].reshape((self.DC.shape[0], 1)), dataCount - 1, axis=1)
-            if self.dataset == 'MOD09A1.005' or self.dataset == 'MOD13Q1.006':
+            if self.dataset == 'MOD09A1.006' or self.dataset == 'MOD13Q1.006':
                 QC = np.uint16(QC)
             else:
                 QC = np.uint8(QC)
