@@ -226,8 +226,12 @@ class ModisImageBase(object):
 		"""
 
         if len(self.tiles) > 1:
+            # 获取所有的hdf文件
             hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
+
+            # i:0,2
             for i in range(0, len(hdflist), 2):
+                # 一个使用GDAL将modis数据从hdf格式拼接到GDAL格式的类
                 ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=[hdflist[i], hdflist[i + 1]],
                                                                 subset=self.subset, outformat='GTiff')
                 ms.run(str(hdflist[i].split('.h')[0]) + 'mos.tif')
@@ -365,6 +369,7 @@ class ModisImageBase(object):
         print('self.rows:',self.rows,self.columns,self.observations,subsetInt.count(1))
         for i in range(dataCount):
             name = str(dataNames[i])
+            # 原来是两个步长，我现在用半个月的数据，这里的dataList.size()是等于observations
             dataList = sorted(glob.glob(self.fullPath + '/*' + name[-10:-4] + '.tif'))
             bandDC = np.empty((0, 1))
             for b in dataList:
