@@ -26,7 +26,7 @@ if spectral == '0':
                        subset='1 1 0 0 0 0 0 0 0 0 0 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    mod13 = ap.MOD13Q1(directory=directory, username=username, password=password, dataset='MOD13Q1.005',
+    mod13 = ap.MOD13Q1(directory=directory, username=username, password=password, dataset='MOD13Q1.006',
                        subset='1 1 1 0 0 0 0 0 0 0 0 1',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 

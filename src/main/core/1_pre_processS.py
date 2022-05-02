@@ -38,7 +38,7 @@ logging.debug(coln)
 logging.debug("Data shape is ", dat.shape)  # 15 columns by 253 observations x images that are 1927 rows and 1082 columns
 
 logging.debug("Unique ID creation...")
-meta = open(load_data_fp + "MOD13Q1.005/metadata_MOD13Q1.005.txt").read()
+meta = open(load_data_fp + "MOD13Q1.006/metadata_MOD13Q1.006.txt").read()
 s = 'self.rows'
 loc = meta.index(s)+len(s + ':  ')
 first_blank_space = meta[loc:len(meta)].index(' ')

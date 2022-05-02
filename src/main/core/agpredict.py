@@ -73,11 +73,11 @@ class ModisImageBase(object):
 		
 		:param password: password for NASA's EarthData Login (https://urs.earthdata.nasa.gov/)
 		
-		:param dataset: full name of MODIS dataset (e.g. MOD13Q1.005)
+		:param dataset: full name of MODIS dataset (e.g. MOD13Q1.006)
 		
 		:param subset: subset of data to be taken from the HDF file as a string of
 			0 (do not select data) and 1s (select data).  If, for example, you want
-			to process only NDVI and the quality mask from the MOD13Q1.005 dataset, 
+			to process only NDVI and the quality mask from the MOD13Q1.006 dataset, 
 			subset = '1 0 0 0 0 0 0 0 0 0 0 1'
 		
 		:param tiles: string of the MODIS tiles to be downloaded, e.g. 'h08v05'.  
@@ -433,7 +433,7 @@ class ModisImageBase(object):
         if subsetInt[self.qualityBand] == 1:
             dataCount = self.subset.count('1')
             QC = np.repeat(self.DC[:, q].reshape((self.DC.shape[0], 1)), dataCount - 1, axis=1)
-            if self.dataset == 'MOD09A1.005' or self.dataset == 'MOD13Q1.005':
+            if self.dataset == 'MOD09A1.005' or self.dataset == 'MOD13Q1.006':
                 QC = np.uint16(QC)
             else:
                 QC = np.uint8(QC)

@@ -85,7 +85,7 @@ class MOD17A2():
             self.filelist = dm.getListDays()
             self.observations = len(dm.getListDays())
 
-            if self.dataset != 'MOD13Q1.005':
+            if self.dataset != 'MOD13Q1.006':
                 if self.observations % 2 != 0:
                     raise IOError(
                         "The total number of observations through time must be an even number. Please add or remove an observation before or after %s" % str(

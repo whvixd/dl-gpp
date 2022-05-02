@@ -44,7 +44,7 @@ print(coln)
 print("Data shape is ", dat.shape)
 
 print("Unique ID creation...")
-meta = open(load_data_fp + "MOD13Q1.005/metadata_MOD13Q1.005.txt").read()
+meta = open(load_data_fp + "MOD13Q1.006/metadata_MOD13Q1.006.txt").read()
 
 # 行数
 s = 'self.rows'
