@@ -1,7 +1,9 @@
 import time
+import logging
+import logging.handlers
 
 
-def wrapper(logging):
+def wrapperLogging():
     debug_format = '%(asctime)s-[%(filename)s-->line:%(lineno)d]-%(levelname)s:%(message)s'
     console_handler = logging.StreamHandler()
 
@@ -12,7 +14,8 @@ def wrapper(logging):
         when='D', interval=1)
 
     # file_handler = logging.FileHandler("./debug.log", mode="a", encoding="utf-8")
-
     logging.basicConfig(level=logging.DEBUG,  # 设置级别，根据等级显示
                         format=debug_format,  # 设置输出格式
                         handlers=[console_handler, file_run_log])
+
+    return logging

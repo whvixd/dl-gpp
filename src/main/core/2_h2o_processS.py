@@ -1,19 +1,21 @@
 # Fetch command line arguments
 import sys
+import LogUtil
+logging = LogUtil.wrapperLogging()
 my_args = sys.argv
-print("Running script:", sys.argv[0])
+logging.debug("Running script:", sys.argv[0])
 my_args = sys.argv[1:]
-print("Arguments passed to script:", my_args)
+logging.debug("Arguments passed to script:", my_args)
 load_data_fp = my_args[0]
 save_data_fp = my_args[1]
 
 #######################################################################
-print("Initializing h2o...")
+logging.debug("Initializing h2o...")
 import h2o
 h2o.init(min_mem_size=200, max_mem_size =210)
 
 #######################################################################
-print("Importing data...")
+logging.debug("Importing data...")
 data = h2o.import_file(path = load_data_fp)
 
 #######################################################################
@@ -23,19 +25,19 @@ data.dim
 data.head()
 
 #######################################################################
-print("Making 'time_period' and 'landuse' a factor...")
+logging.debug("Making 'time_period' and 'landuse' a factor...")
 data['time_period'] = data['time_period'].asfactor()
 data['time_period'].isfactor()
 data['landuse'] = data['landuse'].asfactor()
-print(data['landuse'].unique())
+logging.debug(data['landuse'].unique())
 
 #######################################################################
-print("Dropping all time period 1 because they have no lagged predictors...")
+logging.debug("Dropping all time period 1 because they have no lagged predictors...")
 ind = data["timeID"] != 1
 data = data[ind] # Gett ERRORS here that the Java heap does not have enough memory, unless you 
 # set min_mem_size_GB=40, max_mem_size_GB = 120. Then it works.
 
-print("Setting all the 9999 to NA...")
+logging.debug("Setting all the 9999 to NA...")
 
 B1_lag = data['B1_lag']
 B1_lag[B1_lag==9999] = None

@@ -49,10 +49,9 @@ import os, sys
 import glob
 import subprocess
 from abc import ABCMeta
-import logging
 import LogUtil
 
-LogUtil.wrapper(logging)
+logging = LogUtil.wrapperLogging()
 from ShelveHelper import ShelveWrapper
 
 

@@ -2,6 +2,8 @@ from __future__ import division
 import csv, time, sys, pickle, h2o
 # Hyperopt：是进行超参数优化的一个类库。有了它我们就可以拜托手动调参的烦恼，并且往往能够在相对较短的时间内获取原优于手动调参的最终结果。
 from hyperopt import fmin, tpe, hp, STATUS_OK, STATUS_FAIL, Trials
+import LogUtil
+logging=LogUtil.wrapperLogging()
 # from hyperopt import hp
 
 # python -u 3_h2o_deeplearning.py
@@ -22,9 +24,9 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, STATUS_FAIL, Trials
 # landuse > 3_dl_meanCA.log &
 
 my_args = sys.argv
-print("Running script:", sys.argv[0])
+logging.debug("Running script:", sys.argv[0])
 my_args = sys.argv[1:]
-print("Arguments passed to script:", my_args)
+logging.debug("Arguments passed to script:", my_args)
 load_data_fp = my_args[0]
 load_train_ind_fp = my_args[1]
 saving_fp = my_args[2]
@@ -35,17 +37,17 @@ predictors = my_args[3:]
 
 evals = 45
 
-print("Loading in data...")
+logging.debug("Loading in data...")
 h2o.init(min_mem_size_GB = 225, max_mem_size_GB = 230)
 d = h2o.import_frame(path = load_data_fp)
 #######################################################################
-print("Making 'time_period' and 'landuse' a factor...")
+logging.debug("Making 'time_period' and 'landuse' a factor...")
 d['time_period'] = d['time_period'].asfactor()
 assert d['time_period'].isfactor()
-print(d.levels(col='time_period'))
+logging.debug(d.levels(col='time_period'))
 d['landuse'] = d['landuse'].asfactor()
 assert d['landuse'].isfactor()
-print(d.levels(col='landuse'))
+logging.debug(d.levels(col='landuse'))
 d.describe()
 
 #######################################################################
@@ -57,18 +59,18 @@ test_index = d['train_index'] != 1
 test = d[test_index]
 
 assert test.dim()[0] + train.dim()[0] == d.dim()[0]
-print("Training data has", train.ncol(), "columns and", train.nrow(), "rows, test has", test.nrow(), "rows.")
+logging.debug("Training data has", train.ncol(), "columns and", train.nrow(), "rows, test has", test.nrow(), "rows.")
 
-print("Making data 25% smaller so this doesnt take as long by randomly keeping 75% of the rows.")
+logging.debug("Making data 25% smaller so this doesnt take as long by randomly keeping 75% of the rows.")
 r = train[0].runif() # Random UNIform numbers (0,1), one per row
 train = train[ r < 0.75 ]
-print("Training data now has", train.nrow(), "rows.")
+logging.debug("Training data now has", train.nrow(), "rows.")
 
 h2o.remove([test_index, train_index, d])
 del test_index, train_index, d
 
 def split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon):
-    print("Trying h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon values of:", h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon)
+    logging.debug("Trying h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon values of:", h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon)
     # H2O是一个基于java的机器学习/深度学习平台，它支持大量无监督和有监督的模型，也支持深度学习算法；可以作为R或Python包导入，也给用户提供UI似的界面
     # from h2o.estimators.deeplearning import H2ODeepLearningEstimator
     dl = h2o.deeplearning(
@@ -94,7 +96,7 @@ def split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon):
     # 损失函数：均方差
     mse = dl.mse(valid=True)
     r2 = dl.r2(valid=True)
-    print("Deep learning MSE:", mse)
+    logging.debug("Deep learning MSE:", mse)
     return ([mse, r2])
 
 
@@ -111,7 +113,7 @@ def objective(args):
     try:
         mse, r2 = split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon)
     except:
-        print("Error in trying to fit and then predict with dl model:", sys.exc_info()[0])
+        logging.debug("Error in trying to fit and then predict with dl model:", sys.exc_info()[0])
         mse = None
         r2 = None
         status = STATUS_FAIL
@@ -147,15 +149,15 @@ def run_all_dl(csvfile=saving_fp,
     start_save(csvfile=csvfile)
     # 每次结果放到这里
     trials = Trials()
-    print("Deep learning...")
+    logging.debug("Deep learning...")
     # 在 objective 函数中寻求最小解（MSE），evals：执行次数
     best = fmin(objective,  # DNN函数
                 space=space,
                 algo=tpe.suggest,
                 max_evals=evals,
                 trials=trials)
-    print(best)
-    print(trials.losses())
+    logging.debug(best)
+    logging.debug(trials.losses())
     with open('output/dlbest.pkl', 'w') as output:
         pickle.dump(best, output, -1)
     with open('output/dltrials.pkl', 'w') as output:

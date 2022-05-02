@@ -2,20 +2,22 @@ from __future__ import division
 import numpy as np
 # Fetch command line arguments
 import sys
+import LogUtil
+logging = LogUtil.wrapperLogging()
 my_args = sys.argv
-print("Running script:", sys.argv[0])
+logging.debug("Running script:", sys.argv[0])
 my_args = sys.argv[1:]
-print("Arguments passed to script:", my_args)
+logging.debug("Arguments passed to script:", my_args)
 load_data_fp = my_args[0]
 save_data_fp = my_args[1]
 old_data_fp = my_args[2] # "None"
 intervals = int(my_args[3]) # 253 for SL and 230 for BL
 years = intervals/23
 
-print("Data loading...")
+logging.debug("Data loading...")
 dat = np.load(load_data_fp + 'finalMatrix.npy')
 
-print("Column names:")
+logging.debug("Column names:")
 coln = open(load_data_fp + "columnNames.txt").read()
 coln = coln.replace('Pixel Reliability', 'PixelReliability')
 coln = coln.replace('LULC', 'landuse')
@@ -24,18 +26,18 @@ coln = coln.split()
 lags = ["GWP","B1","B2","B3","B4","B5","B6","B7", "nino34"]
 
 if (len(my_args)>4):
-  print("Data loading for extra file...")
+  logging.debug("Data loading for extra file...")
   load_extra_file = my_args[4]
   landuse = np.load(load_extra_file)
   assert dat.shape[0] == len(landuse)
   dat = np.c_[dat, landuse]
   coln.append("landuse")
 
-print(coln)
+logging.debug(coln)
 
-print("Data shape is ", dat.shape)  # 15 columns by 253 observations x images that are 1927 rows and 1082 columns
+logging.debug("Data shape is ", dat.shape)  # 15 columns by 253 observations x images that are 1927 rows and 1082 columns
 
-print("Unique ID creation...")
+logging.debug("Unique ID creation...")
 meta = open(load_data_fp + "MOD13Q1.005/metadata_MOD13Q1.005.txt").read()
 s = 'self.rows'
 loc = meta.index(s)+len(s + ':  ')
@@ -51,18 +53,18 @@ assert dat.shape[0] == len(uniq_id)
 dat = np.c_[dat, uniq_id]
 
 coln.append("uniq_id")
-print(coln)
+logging.debug(coln)
 
 # Time variable:
 time_ind = coln.index("timeID") # col num for time
 np.unique(dat[:,time_ind])
-print("Head and tail of time:", dat[:100, time_ind], dat[-100:, time_ind])
+logging.debug("Head and tail of time:", dat[:100, time_ind], dat[-100:, time_ind])
 
-print("Reshaping data so that unique ID is primary sorting variable and timeID is secondary...")
+logging.debug("Reshaping data so that unique ID is primary sorting variable and timeID is secondary...")
 ind = np.lexsort((dat[:,time_ind], dat[:,-1]))
 dat = dat[ind]
 
-print("Adding time_period variable after we have re-ordered into time sequencing...")
+logging.debug("Adding time_period variable after we have re-ordered into time sequencing...")
 # add a variable that indicates the time period of the year
 # in R:
 # time_period <- rep(as.factor(rep(1:23, 11)), nrow(d)/length(as.factor(rep(1:23, 11))))
@@ -72,27 +74,27 @@ time_period = np.tile(time_for_one_pixel, dat.shape[0]/len(time_for_one_pixel))
 assert len(time_period) == dat.shape[0]
 dat = np.c_[dat, time_period]
 coln.append("time_period")
-print("New column names:", coln)
+logging.debug("New column names:", coln)
 
 if 'SL' in coln:
-  print("Using the SL indicator variable to subset out all the non-SL pixels...")
+  logging.debug("Using the SL indicator variable to subset out all the non-SL pixels...")
   #  1 == Sri Lanka and 0 == ocean
   np.unique(dat[:,coln.index("SL")])
   dat = dat[dat[:, coln.index("SL")]==1]
   
 if 'landuse' in coln:
-  print("Using the landuse indicator variable to subset out all the pixels missing landuse...")
-  print("Data shape before dropping", dat.shape)
+  logging.debug("Using the landuse indicator variable to subset out all the pixels missing landuse...")
+  logging.debug("Data shape before dropping", dat.shape)
   dat = dat[dat[:, coln.index("landuse")] != -9999]
-  print("Data shape after dropping", dat.shape)
+  logging.debug("Data shape after dropping", dat.shape)
 
-print("Turn into pandas DataFrame for lagging and saving.")
+logging.debug("Turn into pandas DataFrame for lagging and saving.")
 import pandas as pd
 assert len(coln)==dat.shape[1]
 df = pd.DataFrame(dat, columns = coln) # dat is a numpy 2d array
-print("Created the pandas DataFrame.")
+logging.debug("Created the pandas DataFrame.")
 
-print("Lagging predictor variables...")
+logging.debug("Lagging predictor variables...")
 df.GWP = df.GWP.shift(1) # Gridded world population
 df.B1 = df.B1.shift(1)
 df.B2 = df.B2.shift(1)
@@ -103,8 +105,8 @@ df.B6 = df.B6.shift(1)
 df.B7 = df.B7.shift(1)
 df.nino34 = df.nino34.shift(1)  # El Nino
 df['EVI_lag'] = df.EVI.shift(1) # lag of outcome variable
-print("Lagged all the predictor variables.")
-print("Data shape is ", df.shape)
+logging.debug("Lagged all the predictor variables.")
+logging.debug("Data shape is ", df.shape)
 # In h2o, in next py script, I drop all time period 1 because they have no lagged predictors
 
 coln = df.columns
@@ -115,7 +117,7 @@ df.columns = new
 # Drop NDVI column for spectral data:
 df.drop('NDVI', axis=1, inplace=True)
 
-print("Spliting into training and validation sets...")
+logging.debug("Spliting into training and validation sets...")
 if(old_data_fp != "None"):
   data = pd.read_csv(old_data_fp)
   df['training'] = data['training']
@@ -132,8 +134,8 @@ else:
   training = np.array([x in training_grids for x in df['autocorrelationGrid']])
   
   while(not (round(sum(training)/len(training), 2) == prop_train or round(sum(training)/len(training), 2) == prop_train + 0.01 or round(sum(training)/len(training), 2) == prop_train - 0.01)):
-    print("Proportion assigned to training data:", sum(training) / len(training))
-    print("Trying to assign data to training in a way that gives us the correct proportion...")
+    logging.debug("Proportion assigned to training data:", sum(training) / len(training))
+    logging.debug("Trying to assign data to training in a way that gives us the correct proportion...")
     training_grids = np.random.choice(a = grid_options, size = round(len(grid_options)*prop_train), replace=False)
     testing_grids = grid_options[np.array([x not in training_grids for x in grid_options])]
     assert sum([len(training_grids), len(testing_grids)]) == len(grid_options)
@@ -142,14 +144,14 @@ else:
     # create vector allocating every obs to training or testing:
     training = np.array([x in training_grids for x in df['autocorrelationGrid']])
 
-  print("Proportion assigned to training data:", sum(training) / len(training))
+  logging.debug("Proportion assigned to training data:", sum(training) / len(training))
   assert len(training) == df.shape[0]
   df['training'] = training 
 
 # Save to csv to then load into h2o:
-print("Starting to save to csv format...")
+logging.debug("Starting to save to csv format...")
 df.to_csv(save_data_fp, header=True, index=False)
-print(
+logging.debug(
   "Done with saving. You can now move to step 2 of the modeling process: processing data for direct input to modeling functions.")
 
 # Send email
