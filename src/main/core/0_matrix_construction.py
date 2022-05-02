@@ -17,26 +17,26 @@ today = a[5]
 enddate = a[6]
 # 让输出成的文件格式以它为标准
 referenceImage = a[7]
-downloadF=a[8]
+downloadF = a[8]
 # python -u 0_matrix_construction.py 1 /data/emily/SL
 # myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
 if spectral == '0':
     # https://lpdaac.usgs.gov/products/mod11a2v061/
     mod11 = ap.MOD11A2(directory=directory, username=username, password=password, dataset='MOD11A2.005',
                        subset='1 1 0 0 0 0 0 0 0 0 0 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
     mod13 = ap.MOD13Q1(directory=directory, username=username, password=password, dataset='MOD13Q1.005',
                        subset='1 1 1 0 0 0 0 0 0 0 0 1',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
     mod15 = ap.MOD15A2(directory=directory, username=username, password=password, dataset='MOD15A2.005',
                        subset='1 1 1 0 0 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
     mod17 = ap.MOD17A2(directory=directory, username=username, password=password, dataset='MOD17A2.005',
                        subset='1 1 1 0 0 0 0 0 0 0 0 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
     mod11.prepare()
     mod13.prepare()
@@ -52,7 +52,7 @@ if spectral == '1':
 
     mod09 = ap.MOD09A1(directory=directory + '/spectral', username=username, password=password, dataset='MOD09A1.006',
                        subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage,downloadF=downloadF)
+                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
     mod09.prepare()
     if os.path.isfile(directory + '/MOD13Q1.006.npy'):
@@ -60,7 +60,8 @@ if spectral == '1':
     else:
         mod13 = ap.MOD13Q1(directory=directory + '/spectral', username=username, password=password,
                            dataset='MOD13Q1.006', subset='1 0 1 0 0 0 0 0 0 0 0 1',
-                           tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
+                           tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage,
+                           downloadF=downloadF)
         mod13.prepare()
 
     # 矩阵化，图片->矩阵

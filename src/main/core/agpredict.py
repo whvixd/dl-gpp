@@ -366,16 +366,17 @@ class ModisImageBase(object):
         DCs = np.empty(shape=(self.rows * self.columns * self.observations, subsetInt.count(1)))
 
         print('self.rows:',self.rows,self.columns,self.observations,subsetInt.count(1))
+        # 数据类型
         for i in range(dataCount):
             name = str(dataNames[i])
             # 原来是两个步长，我现在用半个月的数据，这里的dataList.size()是等于observations
+            # 按时间纬度，将同一时间的tif合并数组中
             dataList = sorted(glob.glob(self.fullPath + '/*' + name[-10:-4] + '.tif'))
             bandDC = np.empty((0, 1))
             for b in dataList:
                 data = gdal.Open(str(b), GA_ReadOnly).ReadAsArray()
                 vec = data.reshape((self.rows * self.columns, 1))
                 bandDC = np.append(bandDC, vec, axis=0)
-            # fixme,两个行对不上，报错
             DC = np.append(DC, bandDC, axis=1)
             del vec, bandDC, data
 
@@ -385,6 +386,7 @@ class ModisImageBase(object):
         if self.dataset == 'MOD11A2.005':
             DC[:, 0][DC[:, 0] == self.fillValue] = 9999.0  # this should have fixed it!
         else:
+            # 将9999.0替换fillValue
             DC[DC == self.fillValue] = 9999.0
 
             # scale dataset
@@ -393,12 +395,13 @@ class ModisImageBase(object):
             if subsetInt[i] == 1:
                 DCs[:, count] = np.multiply(DC[:, count], self.scale[i])
                 count += 1
+        # ???
         DCs[DC == 9999.0] = 9999.0
         self.DC = DCs
         del DC
 
         # 将对象属性输入到本地中
-        # metadata function
+        # metadata function，fixme 保存数据确实，DC数组过大，一些数据省略了
         with open(self.fullPath + '/' + 'metadata_' + self.dataset + '.txt', 'w') as f:
             f.write(' '.join(["self.%s = %s" % (k, v) for k, v in self.__dict__.items()]))
 
@@ -441,13 +444,13 @@ class ModisImageBase(object):
             DCm = np.ma.masked_where(QCm == 1, DCm)
             DCm = np.ma.masked_where(DCm == 9999.0, DCm)
 
-            obs = None
+            obs:int = 0
             if len(self.tiles) > 1:
-                obs = self.observations / len(self.tiles)
+                obs = (int)(self.observations / len(self.tiles))
             if len(self.tiles) == 1:
-                obs = self.observations / 2
+                obs = (int)(self.observations / 2)
 
-            outArray = np.empty(shape=(self.rows * self.columns * obs, 0))
+            outArray = np.empty(shape=((int)(self.rows * self.columns * obs), 0))
             for b in range(0, self.DC.shape[1] - 1):
                 cfull = DCm[:, b].reshape((self.observations, self.rows, self.columns))
                 b16 = np.empty(shape=(self.rows * self.columns * obs, 0))
@@ -476,13 +479,13 @@ class ModisImageBase(object):
         if subsetInt[self.qualityBand] != 1:
             cleanDC = np.delete(self.DC, q, 1)
 
-            obs=None
+            obs:int=0
             if len(self.tiles) > 1:
-                obs = self.observations / len(self.tiles)
+                obs = (int)(self.observations / len(self.tiles))
             if len(self.tiles) == 1:
-                obs = self.observations / 2
+                obs = (int)(self.observations / 2)
 
-            outArray = np.empty(shape=(self.rows * self.columns * obs, 0))
+            outArray = np.empty(shape=((int)(self.rows * self.columns * obs), 0))
             for b in range(cleanDC.shape[1]):
                 cfull = cleanDC[:, b].reshape((self.observations, self.rows, self.columns))
                 b16 = np.empty(shape=(self.rows * self.columns * obs))
@@ -555,11 +558,11 @@ class ModisImageBase(object):
         self.qualityCheck()
 
     def finalMatrix(self):
-
+        obs:int=0
         if len(self.tiles) > 1:
-            obs = self.observations / len(self.tiles)
+            obs = (int)(self.observations / len(self.tiles))
         if len(self.tiles) == 1:
-            obs = self.observations / 2
+            obs = (int)(self.observations / 2)
 
         # create latitude/longitude grid
         xoff, a, b, yoff, d, e = self.referenceImage.GetGeoTransform()
@@ -836,14 +839,6 @@ class MOD13Q1(ModisImageBase):
         grid = np.repeat(grid, lag, axis=1)
 
         grid_sized = grid[0:self.rows, 0:self.columns].reshape((1, self.rows, self.columns))
-
-        # whvixd 补充
-        if len(self.tiles) > 1:
-            obs = self.observations / len(self.tiles)
-        if len(self.tiles) == 1:
-            obs = self.observations / 2
-        #     ===
-
         grid_rep = np.repeat(grid_sized, obs, axis=0)
         grid_final = grid_rep.reshape((obs * self.rows * self.columns, 1))
 

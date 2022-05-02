@@ -2,6 +2,7 @@ import unittest
 import osgeo.gdal as gdal
 import pymodis
 import glob
+import numpy as np
 
 
 class MyTestCase(unittest.TestCase):
@@ -63,7 +64,7 @@ class MyTestCase(unittest.TestCase):
         self.subset='1 1 1 1 1 1 1 0 0 0 0 1 0'
         self.rows=4790
         self.columns=5455
-        self.observations=2
+        self.observations=4
         dataCount = self.subset.count('1')
         dataNames = sorted(glob.glob(self.fullPath + '/*.tif'))
         dataNames = dataNames[0:dataCount]
@@ -75,6 +76,7 @@ class MyTestCase(unittest.TestCase):
 
         for i in range(dataCount):
             name = str(dataNames[i])
+            # 按时间纬度，将同一时间的tif合并数组中
             dataList = sorted(glob.glob(self.fullPath + '/*' + name[-10:-4] + '.tif'))
             bandDC = np.empty((0, 1))
             for b in dataList:
@@ -85,6 +87,21 @@ class MyTestCase(unittest.TestCase):
                 bandDC = np.append(bandDC, vec, axis=0)
             DC = np.append(DC, bandDC, axis=1)
 
+    def test_np(self):
+        a=np.array([[1,2],[1,2],[1,2]])
+        a[a==2]=3
+        print(a)
+        b=a[:-1]
+        print(b)
+
+    def test_type_convert(self):
+        self.rows = 4790
+        self.columns = 5455
+        self.observations = 4
+
+        obs = (self.observations / 2)
+        outArray = np.empty(shape=((int)(self.rows * self.columns * obs), 0))
+        print(outArray.shape)
 
 if __name__ == '__main__':
     unittest.main()
