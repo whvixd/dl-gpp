@@ -54,7 +54,7 @@ if spectral == '1':
                        subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    mod09.prepare()
+    # mod09.prepare()
     if os.path.isfile(directory + '/MOD13Q1.006.npy'):
         subprocess.call(['cp', directory + 'MOD13Q1.npy', directory + 'MOD13Q1.txt', directory + '/spectral'])
     else:
@@ -65,7 +65,7 @@ if spectral == '1':
         mod13.prepare()
 
     # 矩阵化，图片->矩阵
-    mod09.finalMatrix()
+    mod09.finalMatrixFunction()
 
 # python -u 0_matrix_construction.py 1 /data/emily/SL myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
 

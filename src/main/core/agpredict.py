@@ -559,8 +559,9 @@ class ModisImageBase(object):
 
         sys.stdout = sys.__stdout__
 
-        logging.info('DataSet:%s.See file qualityCheck%s.txt for detailed information about the final matrix.' % (
-        self.dataset, self.dataset))
+        logging.info(
+            'QualityCheck complete,DataSet:%s.See file qualityCheck%s.txt for detailed information about the final matrix.' % (
+                self.dataset, self.dataset))
 
     def prepare(self):
         # 下载数据
@@ -576,7 +577,8 @@ class ModisImageBase(object):
         self.quality()
         self.qualityCheck()
 
-    def finalMatrix(self):
+    def finalMatrixFunction(self):
+        logging.debug('FinalMatrixFunction start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         obs: int = 0
         if len(self.tiles) > 1:
             obs = (int)(self.observations / len(self.tiles))
@@ -620,8 +622,8 @@ class ModisImageBase(object):
         l.close()
 
         logging.info(
-            'Latitude and longitude arrays successfully created minimum latitude %d and minimum longitude %d' % (
-                lat.min(), lon.min()))
+            'FinalMatrixFunction process,DataSet:%s,Latitude and longitude arrays successfully created minimum latitude %d and minimum longitude %d' %
+            (self.dataset, lat.min(), lon.min()))
         del lat, lon
 
         # time array
@@ -634,8 +636,9 @@ class ModisImageBase(object):
         t.write('timeID \n')
         t.close()
 
-        logging.debug('Time ID created with maximum time value of %d and dimensions of %d rows by %d columns' % (
-            time.max(), time.shape[0], time.shape[1]))
+        logging.debug(
+            'FinalMatrixFunction process,DataSet:%s.Time ID created with maximum time value of %d and dimensions of %d rows by %d columns' %
+            (self.dataset, time.max(), time.shape[0], time.shape[1]))
         del x, time
 
         # autocorrelation
@@ -661,8 +664,8 @@ class ModisImageBase(object):
         a.write('autocorrelationGrid' + ' ' + '\n')
         a.close()
         logging.info(
-            'Autocorrelation grid created with pixel lag of %d and dimensions of %d rows by %d columns' % (
-                lag, grid_final.shape[0], grid_final.shape[1]))
+            'FinalMatrixFunction process,DataSet:%s.Autocorrelation grid created with pixel lag of %d and dimensions of %d rows by %d columns' %
+            (self.dataset, lag, grid_final.shape[0], grid_final.shape[1]))
         del idlist, grid_sized, grid
 
         # append txt file
@@ -692,11 +695,11 @@ class ModisImageBase(object):
 
         np.save(str(self.directory) + '/finalMatrix.npy', matrix)
         logging.info(
-            'Final matrix created as finalMatrix.npy in %s. Column names for the matrix can be foud in columnNames.txt.  To access matrix, call object.finalDC' % (
-                str(self.directory)))
+            'FinalMatrixFunction process,DataSet:%s.Final matrix created as finalMatrix.npy in %s. Column names for the matrix can be foud in columnNames.txt.  To access matrix, call object.finalDC' %
+            (self.dataset, str(self.directory)))
         logging.info(
-            'Final matrix with size of %d rows by %d columns.  To access matrix, call object.finalMatrix.  The matrix includes the following variables: %s' % (
-                matrix.shape[0], matrix.shape[1], str(var)))
+            'FinalMatrixFunction process,DataSet:%s.Final matrix with size of %d rows by %d columns.  To access matrix, call object.finalMatrix.  The matrix includes the following variables: %s' %
+            (self.dataset, matrix.shape[0], matrix.shape[1], str(var)))
 
     @staticmethod
     def imageType():
@@ -786,8 +789,8 @@ class MOD13Q1(ModisImageBase):
                 'The final 16-day interval matrix was created successfully.  A quality mask was not applied, though no data values are set at 9999.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s.  To access the final matrix, call object.finalDC' % (
                     self.finalDC.shape[0], self.finalDC.shape[1], str(var)))
 
-    def finalMatrix(self):
-
+    def finalMatrixFunction(self):
+        logging.debug('FinalMatrixFunction start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         # create latitude/longitude grid
         global obs
         xoff, a, b, yoff, d, e = self.referenceImage.GetGeoTransform()
