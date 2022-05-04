@@ -6,22 +6,14 @@ import LogUtil
 logging=LogUtil.wrapperLogging()
 # from hyperopt import hp
 
-# python -u 3_h2o_deeplearning.py
-# /data/john/CA/mean_imputed_data
-# /data/john/CA/random_split_for_training.csv
-# output/dlres_meanimputedCA.csv
-#### 线性回归入参:
-# GWP_lag
-# LST_lag
-# NDVI_lag
-# FPAR_lag
-# LAI_lag
-# GP_lag
-# PSN_lag
-# nino34_lag
-# time_period
-# EVI_lag
-# landuse > 3_dl_meanCA.log &
+'''
+python -u 3_h2o_deeplearning.py 
+/data/john/CA/mean_imputed_dataS 
+/data/john/CA/random_split_for_training.csv 
+output/dlres_meanimputedSCA.csv 
+B1_lag B2_lag B3_lag B4_lag B5_lag B6_lag B7_lag GWP_lag nino34_lag time_period EVI_lag landuse > 3_dl_meanSCA.log &
+
+'''
 
 my_args = sys.argv
 logging.debug("Running script:", sys.argv[0])

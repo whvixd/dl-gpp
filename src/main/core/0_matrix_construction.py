@@ -59,16 +59,16 @@ if spectral == '1':
         subprocess.call(['cp', directory + 'MOD13Q1.npy', directory + 'MOD13Q1.txt', directory + '/spectral'])
     else:
         mod13 = ap.MOD13Q1(directory=directory + '/spectral', username=username, password=password,
-                           dataset='MOD13Q1.006', subset='1 0 1 0 0 0 0 0 0 0 0 1',
+                           dataset='MOD13Q1.006', subset='1 1 1 0 0 0 0 0 0 0 0 1',
                            tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage,
                            downloadF=downloadF)
         mod13.prepare()
 
-    # 矩阵化，图片->矩阵
+    # 合并到一个矩阵中
     mod09.finalMatrixFunction()
 
 # python -u 0_matrix_construction.py 1 /data/emily/SL myusername mypassword 'h25v08 h26v08' 2014-01-30 2014-01-01 /data/emily/WF/NDVI_DC/SL.tif
 
 '''
-/Users/whvixd/opt/anaconda3/envs/python37/bin/python -u 0_matrix_construction.py 1 /Users/whvixd/Documents/individual/MODIS/dataset/SL whvixd 1130Wang1130 'h25v08 h26v08' 2014-01-30 2014-01-01 /Users/whvixd/Documents/individual/MODIS/dataset/SL/SL.tif
+/Users/whvixd/opt/anaconda3/envs/python37/bin/python -u 0_matrix_construction.py 1 /Users/whvixd/Documents/individual/MODIS/dataset/SL whvixd 1130Wang1130 'h25v08 h26v08' 2022-03-01 2022-03-30 /Users/whvixd/Documents/individual/MODIS/dataset/SL/SL.tif 1
 '''

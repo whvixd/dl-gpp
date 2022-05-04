@@ -124,5 +124,15 @@ class MyTestCase(unittest.TestCase):
         grid_rep = np.repeat(grid_sized, obs, axis=0)
         grid_final = grid_rep.reshape((obs * self.rows * self.columns, 1))
 
+    def test_tile(self):
+        nrow=4790
+        ncol=5455
+        intervals=2
+        uniq_id = np.tile(range(1, nrow * ncol + 1), intervals)
+        print(len(uniq_id))
+
+    def test_np_load(self):
+        dat = np.load('/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/autocorrelationGrid.npy')
+        print("Head and tail:", dat[:151], dat[-1:])
 if __name__ == '__main__':
     unittest.main()

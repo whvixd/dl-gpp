@@ -744,6 +744,20 @@ class MOD13Q1(ModisImageBase):
         super().__init__(directory, username, password, dataset, subset, tiles, today, enddate, referenceImage, scale,
                          varNames, qualityBand, fillValue, downloadF, dbName)
 
+    def prepare(self):
+        # 下载数据
+        self.download()
+        # 拼接
+        self.mosaic()
+        # 投影 转换成参考图像的扩展名
+        self.convert()
+        # 裁剪 成参考图像的大小
+        self.clip()
+        # 转成矩阵
+        self.matrix()
+        self.quality()
+        self.qualityCheck()
+
     def quality(self):
 
         subsetInt = [int(s) for s in self.subset.split() if s.isdigit()]
