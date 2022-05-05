@@ -127,12 +127,12 @@ if 'landuse' in coln:
 logging.debug("Turn into pandas DataFrame for lagging and saving.")
 import pandas as pd
 
-# fixme 添加了EVI列，突然多了这么多列。。
+# fixme 添加了EVI列，突然多了这么多列。。清除完本地文件重新执行下0的脚本
 logging.debug('len(coln):%d,dat.shape[1]:%d'%(len(coln) , dat.shape[1]))#len(coln):16,dat.shape[1]:29
 assert len(coln) == dat.shape[1]
 df = pd.DataFrame(dat, columns=coln)  # dat is a numpy 2d array
 logging.debug("Created the pandas DataFrame.")
-
+# 创建滞后变量（通常把变量的前期值，即带有滞后作用的变量称为滞后作用Lagged Variable）
 logging.debug("Lagging predictor variables...")
 # df.GWP = df.GWP.shift(1)  # Gridded world population 网格化的世界人口
 df.B1 = df.B1.shift(1)

@@ -3,8 +3,13 @@ import sys, time, csv, h2o
 import numpy as np
 import pandas as pd
 
-# python -u 2_h2o_process_2.py /data/john/srilanka/h2o_data_withMissing /data/john/srilanka/h2o_data_training
-# /data/john/srilanka/h2o_data_holdout /data/john/srilanka/random_split_for_training.csv > 2b_h2o.log &
+'''
+/Users/whvixd/opt/anaconda3/envs/python37/bin/python -u 2_h2o_process_2.py 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_withMissingS 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_trainingS 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_holdoutS 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/random_split_for_training.csv
+'''
 # Fetch command line arguments
 my_args = sys.argv
 print("Running script:", sys.argv[0])
@@ -14,6 +19,7 @@ load_data_fp = my_args[0]
 save_training_data_fp = my_args[1]
 save_holdout_data_fp = my_args[2]
 
+save_training_ind_fp=None
 if (len(my_args)>3):
   print("Saving the vector of training indices because you passed in an argument for a file path to save it.")
   save_training_ind_fp = my_args[3]
@@ -45,18 +51,18 @@ print(data.dim)
 data = data[ind]
 print(data.dim)
 
-print("Setting all the -9999.0 in the CA landuse to NA...")
-landuse = data['landuse']
-landuse[landuse==-9999] = None
-landuse[landuse==9999] = None
-data['landuse'] = landuse
+# print("Setting all the -9999.0 in the CA landuse to NA...")
+# landuse = data['landuse']
+# landuse[landuse==-9999] = None
+# landuse[landuse==9999] = None
+# data['landuse'] = landuse
 
 #######################################################################
 print("Making 'time_period' 'landuse' a factor...")
 data['time_period'] = data['time_period'].asfactor()
 print(data['time_period'].unique())
-data['landuse'] = data['landuse'].asfactor()
-print(data['landuse'].unique())
+# data['landuse'] = data['landuse'].asfactor()
+# print(data['landuse'].unique())
 data.describe()
 
 print("Dropping rows where the outcome, EVI, is NA...")
@@ -104,7 +110,7 @@ if (len(my_args)>3):
   print("autocor length:", len(autocor))
   print("data rows:", d.dim[0])
 
-  training_grids = np.random.choice(a = grid_options, size = len(grid_options)*prop_train, replace=False)
+  training_grids = np.random.choice(a = grid_options, size = (int)(len(grid_options)*prop_train), replace=False)
   testing_grids = np.array(grid_options[np.array([x not in training_grids for x in grid_options])])
   assert sum([len(training_grids), len(testing_grids)]) == len(grid_options)
   assert all([x not in training_grids for x in testing_grids])
@@ -113,7 +119,11 @@ if (len(my_args)>3):
   training = np.array([x in training_grids for x in autocor])
   print("Proportion of data in training", sum(training) / len(training), "and prop_train =", prop_train)
 
-  while(not(round(sum(training)/len(training), 2) == prop_train or round(sum(training)/len(training), 2) == prop_train + 0.01 or round(sum(training)/len(training), 2) == prop_train - 0.01 or round(sum(training)/len(training), 2) == prop_train - 0.02 or round(sum(training)/len(training), 2) == prop_train + 0.02)):
+  while(not(round(sum(training)/len(training), 2) == prop_train
+            or round(sum(training)/len(training), 2) == prop_train + 0.01
+            or round(sum(training)/len(training), 2) == prop_train - 0.01
+            or round(sum(training)/len(training), 2) == prop_train - 0.02
+            or round(sum(training)/len(training), 2) == prop_train + 0.02)):
     print("Trying to assign data to training in a way that gives us the correct proportion...")
     training_grids = np.random.choice(a = grid_options, size = round(len(grid_options)*prop_train), replace=False)
     testing_grids = np.array(grid_options[np.array([x not in training_grids for x in grid_options])])

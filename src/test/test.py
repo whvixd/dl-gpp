@@ -134,5 +134,48 @@ class MyTestCase(unittest.TestCase):
     def test_np_load(self):
         dat = np.load('/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/autocorrelationGrid.npy')
         print("Head and tail:", dat[:151], dat[-1:])
+
+    def test_h2o(self):
+        import h2o
+        load_data_fp='/data/john/srilanka/h2o_data_withMissingS'
+
+        h2o.init(min_mem_size=200, max_mem_size =210)
+        # 导入数据
+        data = h2o.import_frame(path=load_data_fp)
+
+        test_index = data['training'] != 1
+        test = data[test_index]
+
+        # assert test.dim()[0] + train.dim()[0] == d.dim()[0]
+
+    def test_h2o_dl(self):
+        import h2o,sys
+        load_data_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_withMissingS'
+        load_train_ind_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/random_split_for_training.csv'
+        saving_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/dlres_meanimputedS.csv'
+        predictors = 'B1_lag B2_lag B3_lag B4_lag B5_lag B6_lag B7_lag time_period EVI_lag'
+
+        evals = 45
+
+        # 初始内存大小
+        h2o.init(min_mem_size=400, max_mem_size =410)
+        # 导入数据
+        d = h2o.import_file(path=load_data_fp)
+        #######################################################################
+        # 标志为枚举类型
+        d['time_period'] = d['time_period'].asfactor()
+        assert d['time_period'].isfactor()
+        d.describe()
+
+        #######################################################################
+        train_index = h2o.import_file(path=load_train_ind_fp)
+        # fixme train_index 倒入的应该是索引，如：1，2，3
+        d['train_index'] = train_index
+        train = d[d['train_index']]
+
+        test_index = d['train_index'] != 1
+        test = d[test_index]
+
+        assert test.dim()[0] + train.dim()[0] == d.dim()[0]
 if __name__ == '__main__':
     unittest.main()

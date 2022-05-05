@@ -7,18 +7,17 @@ logging=LogUtil.wrapperLogging()
 # from hyperopt import hp
 
 '''
-python -u 3_h2o_deeplearning.py 
-/data/john/CA/mean_imputed_dataS 
-/data/john/CA/random_split_for_training.csv 
-output/dlres_meanimputedSCA.csv 
-B1_lag B2_lag B3_lag B4_lag B5_lag B6_lag B7_lag GWP_lag nino34_lag time_period EVI_lag landuse > 3_dl_meanSCA.log &
-
+/Users/whvixd/opt/anaconda3/envs/python37/bin/python -u 3_h2o_deeplearning.py 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_withMissingS 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/random_split_for_training.csv 
+/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/dlres_meanimputedS.csv 
+B1_lag B2_lag B3_lag B4_lag B5_lag B6_lag B7_lag time_period EVI_lag
 '''
 
 my_args = sys.argv
-logging.debug("Running script:", sys.argv[0])
+logging.debug("Running script:%s"% sys.argv[0])
 my_args = sys.argv[1:]
-logging.debug("Arguments passed to script:", my_args)
+logging.debug("Arguments passed to script:%s"% my_args)
 load_data_fp = my_args[0]
 load_train_ind_fp = my_args[1]
 saving_fp = my_args[2]
@@ -30,39 +29,47 @@ predictors = my_args[3:]
 evals = 45
 
 logging.debug("Loading in data...")
-h2o.init(min_mem_size_GB = 225, max_mem_size_GB = 230)
-d = h2o.import_frame(path = load_data_fp)
+# 初始内存大小
+h2o.init(min_mem_size_GB = 3, max_mem_size_GB = 4)
+# 导入数据
+d = h2o.import_file(path = load_data_fp)
 #######################################################################
+# 标志为枚举类型
 logging.debug("Making 'time_period' and 'landuse' a factor...")
 d['time_period'] = d['time_period'].asfactor()
 assert d['time_period'].isfactor()
-logging.debug(d.levels(col='time_period'))
+# logging.debug(d.levels(col='time_period'))
+
+'''
 d['landuse'] = d['landuse'].asfactor()
 assert d['landuse'].isfactor()
 logging.debug(d.levels(col='landuse'))
+'''
 d.describe()
 
 #######################################################################
-train_index = h2o.import_frame(path = load_train_ind_fp)
+train_index = h2o.import_file(path = load_train_ind_fp)
 d['train_index'] = train_index
 train = d[d['train_index']]
 
 test_index = d['train_index'] != 1
 test = d[test_index]
 
+logging.debug("test.dim()[0]:%s,train.dim()[0]:%s,d.dim()[0]:%s"%(test.dim()[0],train.dim()[0],d.dim()[0]))
 assert test.dim()[0] + train.dim()[0] == d.dim()[0]
-logging.debug("Training data has", train.ncol(), "columns and", train.nrow(), "rows, test has", test.nrow(), "rows.")
+logging.debug("Training data has %d columns and %d rows, test has %d rows."%(train.ncol(), train.nrow(), test.nrow()))
 
 logging.debug("Making data 25% smaller so this doesnt take as long by randomly keeping 75% of the rows.")
 r = train[0].runif() # Random UNIform numbers (0,1), one per row
 train = train[ r < 0.75 ]
-logging.debug("Training data now has", train.nrow(), "rows.")
+logging.debug("Training data now has %d rows."% train.nrow())
 
 h2o.remove([test_index, train_index, d])
 del test_index, train_index, d
 
 def split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon):
-    logging.debug("Trying h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon values of:", h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon)
+    logging.debug("Trying h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon values of:%s,%s,%s,%s,%s,%s,%s,%s"%
+                  (h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon))
     # H2O是一个基于java的机器学习/深度学习平台，它支持大量无监督和有监督的模型，也支持深度学习算法；可以作为R或Python包导入，也给用户提供UI似的界面
     # from h2o.estimators.deeplearning import H2ODeepLearningEstimator
     dl = h2o.deeplearning(
@@ -83,17 +90,20 @@ def split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon):
         # 隐藏层丢弃率
         hidden_dropout_ratios=[hdr1, hdr2, hdr3],
         fast_mode=True,
-        rho=rho, epsilon=epsilon)
+        rho=rho,
+        epsilon=epsilon)
     # dl.train()
     # 损失函数：均方差
     mse = dl.mse(valid=True)
     r2 = dl.r2(valid=True)
-    logging.debug("Deep learning MSE:", mse)
+    logging.debug("Deep learning MSE:%s"% mse)
     return ([mse, r2])
 
 
-def start_save(csvfile, initialize=['mse', 'r2', 'h1', 'h2', 'h3', 'hdr1', 'hdr2', 'hdr3', 'rho', 'epsilon', 'timing',
-                                    'datetime']):
+def start_save(csvfile, initialize=None):
+    if initialize is None:
+        initialize = ['mse', 'r2', 'h1', 'h2', 'h3', 'hdr1', 'hdr2',
+                      'hdr3', 'rho', 'epsilon', 'timing', 'datetime']
     with open(csvfile, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
         writer.writerow(initialize)
@@ -105,7 +115,7 @@ def objective(args):
     try:
         mse, r2 = split_fit_predict_dl(h1, h2, h3, hdr1, hdr2, hdr3, rho, epsilon)
     except:
-        logging.debug("Error in trying to fit and then predict with dl model:", sys.exc_info()[0])
+        logging.debug("Error in trying to fit and then predict with dl model:%s" % sys.exc_info()[0])
         mse = None
         r2 = None
         status = STATUS_FAIL
@@ -127,17 +137,19 @@ def objective(args):
 # hp.uniform(label,low,high)参数在low和high之间均匀分布。
 # hp.quniform(label,low,high,q),参数的取值round(uniform(low,high)/q)*q，适用于那些离散的取值。
 def run_all_dl(csvfile=saving_fp,
-               space=[hp.quniform('h1', 100, 550, 1),  # quniform：离散均匀分布；uniform：连续均匀分布
-                      hp.quniform('h2', 100, 550, 1),
-                      hp.quniform('h3', 100, 550, 1),
-                      # hp.choice('activation', ["RectifierWithDropout", "TanhWithDropout"]),
-                      hp.uniform('hdr1', 0.001, 0.3),
-                      hp.uniform('hdr2', 0.001, 0.3),
-                      hp.uniform('hdr3', 0.001, 0.3),
-                      hp.uniform('rho', 0.9, 0.999),
-                      # 偏差
-                      hp.uniform('epsilon', 1e-10, 1e-4)]):
+               space=None):
     # maxout works well with dropout (Goodfellow et al 2013), and rectifier has worked well with image recognition (LeCun et al 1998)
+    if space is None:
+        space = [hp.quniform('h1', 100, 550, 1),  # quniform：离散均匀分布；uniform：连续均匀分布
+                 hp.quniform('h2', 100, 550, 1),
+                 hp.quniform('h3', 100, 550, 1),
+                 # hp.choice('activation', ["RectifierWithDropout", "TanhWithDropout"]),
+                 hp.uniform('hdr1', 0.001, 0.3),
+                 hp.uniform('hdr2', 0.001, 0.3),
+                 hp.uniform('hdr3', 0.001, 0.3),
+                 hp.uniform('rho', 0.9, 0.999),
+                 # 偏差
+                 hp.uniform('epsilon', 1e-10, 1e-4)]
     start_save(csvfile=csvfile)
     # 每次结果放到这里
     trials = Trials()
