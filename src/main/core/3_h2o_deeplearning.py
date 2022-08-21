@@ -52,7 +52,8 @@ train_index = h2o.import_file(path = load_train_ind_fp)
 d['train_index'] = train_index
 train = d[d['train_index']]
 
-test_index = d['train_index'] != 1
+test_index = d['train_index'] != 1 #？？？？
+# fixme d[index] 是索引到列
 test = d[test_index]
 
 logging.debug("test.dim()[0]:%s,train.dim()[0]:%s,d.dim()[0]:%s"%(test.dim()[0],train.dim()[0],d.dim()[0]))

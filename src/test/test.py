@@ -149,9 +149,9 @@ class MyTestCase(unittest.TestCase):
         # assert test.dim()[0] + train.dim()[0] == d.dim()[0]
 
     def test_h2o_dl(self):
-        import h2o,sys
+        import h2o
         load_data_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/h2o_data_withMissingS'
-        load_train_ind_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/random_split_for_training.csv'
+        load_train_ind_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/training.csv'
         saving_fp = '/Users/whvixd/Documents/individual/MODIS/dataset/SL/spectral/dlres_meanimputedS.csv'
         predictors = 'B1_lag B2_lag B3_lag B4_lag B5_lag B6_lag B7_lag time_period EVI_lag'
 
