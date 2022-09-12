@@ -567,15 +567,15 @@ class ModisImageBase(object):
         # 下载数据
         self.download()
         # 拼接
-        # self.mosaic()
+        self.mosaic()
         # 投影 转换成参考图像的扩展名
         # self.convert()
         # 裁剪 成参考图像的大小
         # self.clip()
         # 转成矩阵
-        # self.matrix()
-        # self.quality()
-        # self.qualityCheck()
+        self.matrix()
+        self.quality()
+        self.qualityCheck()
 
     def finalMatrixFunction(self):
         logging.debug('FinalMatrixFunction start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
@@ -980,11 +980,11 @@ class MOD17A2(ModisImageBase):
         fillValue = 30000
         # 是否需要再下载数据
 
-        dbName = MOD11A2.imageType()
+        dbName = MOD17A2.imageType()
 
         super().__init__(directory, username, password, dataset, subset, tiles, today, enddate, referenceImage, scale,
                          varNames, qualityBand, fillValue, downloadF, dbName)
 
     @staticmethod
     def imageType():
-        return 'MOD17A2'
+        return 'MOD17A2H'
