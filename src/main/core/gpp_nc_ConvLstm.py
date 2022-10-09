@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import netCDF4 as nc
+import torchvision.transforms
 from osgeo import gdal, osr, ogr
 import os
 import glob
@@ -43,16 +44,16 @@ def main():
         X.append(gpp_arr[i:i + seq])
         Y.append(gpp_arr[i + seq:i + seq + 1])
 
-    trainX = np.array(X)
-    trainY = np.array(Y)
+    # 耗时
+    trainX = torch.tensor(X,dtype=torch.float32)
+    trainY = torch.tensor(Y,dtype=torch.float32)
     train_dataset = LstmDataset(trainX, trainY)
     train_loader = DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
 
-    model = convolution_lstm.ConvLSTM(input_channels=1, hidden_channels=[16,8, 4, 2], kernel_size=3)
+    # model = convolution_lstm.ConvLSTM(input_channels=1, hidden_channels=[16,8, 4, 2], kernel_size=3)
 
-
-
-    model = convolution_lstm_ex2.ConvLSTM(input_dim=1, hidden_channels=[16,8, 4, 2], kernel_size=3)
+    model=convolution_lstm_ex2.ConvLSTM(input_dim=1, hidden_dim=8, kernel_size=(3, 3), num_layers=2,
+             batch_first=True, bias=True, return_all_layers=False)
 
     loss = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -61,6 +62,8 @@ def main():
         total_loss = 0
         for idx, (data, label) in enumerate(train_loader):
             # data1 = data.squeeze(1)
+            print("input.shape",data.size())
+            # 耗时，吃内存
             pred = model(torch.autograd.Variable(data))
             # label = label.unsqueeze(1)
             l = loss(pred, label)

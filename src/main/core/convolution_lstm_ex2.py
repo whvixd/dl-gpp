@@ -197,7 +197,7 @@ if __name__ == '__main__':
     target = (torch.randn(1, 8, 25, 25)).double()
 
     convlstm = ConvLSTM(input_dim=16,hidden_dim= 8, kernel_size=(3,3), num_layers=3,
-                        batch_first=True, bias=True,return_all_layers= False) # (t, b, c, h, w) or (b, t, c, h, w)
+                        batch_first=True, bias=True,return_all_layers= False)
     output, last_states = convlstm(x)
     output = output[0][0][-1:].double() # 只要最后一步
     print("output.shape:",output.size())
