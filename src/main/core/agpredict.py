@@ -571,7 +571,7 @@ class ModisImageBase(object):
         # 投影 转换成参考图像的扩展名
         # self.convert()
         # 裁剪 成参考图像的大小
-        # self.clip()
+        self.clip()
         # 转成矩阵
         self.matrix()
         self.quality()
