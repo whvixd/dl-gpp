@@ -32,14 +32,14 @@ class MyTestCase(unittest.TestCase):
                            subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
                            tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
 
-        mod09.prepare()
+        mod09.pre_process()
         if os.path.isfile(directory + '/MOD13Q1.006.npy'):
             subprocess.call(['cp', directory + 'MOD13Q1.npy', directory + 'MOD13Q1.txt', directory + '/spectral'])
         else:
             mod13 = ap.MOD13Q1(directory=directory + '/spectral', username=username, password=password,
                                dataset='MOD13Q1.006', subset='1 0 1 0 0 0 0 0 0 0 0 1',
                                tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
-            mod13.prepare()
+            mod13.pre_process()
 
         # 矩阵化，图片->矩阵
         mod09.finalMatrix()

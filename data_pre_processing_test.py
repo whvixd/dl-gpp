@@ -14,7 +14,7 @@ class MyTestCase(unittest.TestCase):
         tiles='h25v08 h26v08'
         today='2021-01-30'
         enddate='2021-01-01'
-        mod17=MOD17A2(directory=directory, username=username, password=password, dataset='MOD17A2.005',
+        mod17=MOD17A2(directory=directory, username=username, password=password, dataset='MOD17A2H.005',
                        subset='1 1 1 0 0 0 0 0 0 0 0 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage)
 

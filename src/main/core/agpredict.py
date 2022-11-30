@@ -68,72 +68,72 @@ class ModisImageBase(object):
         """
 		:param directory: path to the directory in which all images and matrices
 			will be stored.
-		
+
 		:param username: username for NASA's EarthData Login (https://urs.earthdata.nasa.gov/)
-		
+
 		:param password: password for NASA's EarthData Login (https://urs.earthdata.nasa.gov/)
-		
+
 		:param dataset: full name of MODIS dataset (e.g. MOD13Q1.006)
-		
+
 		:param subset: subset of data to be taken from the HDF file as a string of
 			0 (do not select data) and 1s (select data).  If, for example, you want
-			to process only NDVI and the quality mask from the MOD13Q1.006 dataset, 
+			to process only NDVI and the quality mask from the MOD13Q1.006 dataset,
 			subset = '1 0 0 0 0 0 0 0 0 0 0 1'
-		
-		:param tiles: string of the MODIS tiles to be downloaded, e.g. 'h08v05'.  
+
+		:param tiles: string of the MODIS tiles to be downloaded, e.g. 'h08v05'.
 			Adjacent tiles should be written as ['h08v04', 'h08v05']
-		
+
 		:param today: the most recent date from which to download data
-		
+
 		:param startdate: the start date for the data download
-		
-		:param referenceImage:  the full path for the reference image that is 
+
+		:param referenceImage:  the full path for the reference image that is
 			the size and projection desired for the final dataset.  Use the MODIS
 			Projection Tool to build this image.
-		
-		:param scale:  to scale factor for each dataset in HDF to transform raw data 
-			into final data values.  Taken from the NASA website.  User does not 
+
+		:param scale:  to scale factor for each dataset in HDF to transform raw data
+			into final data values.  Taken from the NASA website.  User does not
 			need to enter.
-		
-		:param varNames: variable names of each dataset in the HDF.  User does not 
+
+		:param varNames: variable names of each dataset in the HDF.  User does not
 			need to enter.
-		
+
 		:param qualityBand:  flag for the quality dataset.  User does not need to enter.
-        
+
         :param filelist: list of the dates in string format ('YYYY.MM.DD') for which tiles were downloaded
-        
+
         :param observations: total number of days for which tiles were downloaded
-        
+
         :param fullPath:  full path to directory for dataset
-        
+
         :param path:  set to MOLT and currently limited to MODIS Terra datasets
-        
+
         :param extent:  path to the shapefile used to define the extent of the final reprojected, mosaicked images
-        
+
         :param projection:  projection information for the referenceImage
-        
+
         :param resolution:  pixel size for the referenceImage
-        
+
         :param rows:  number of rows in the referenceImage
-        
+
         :param cols: number of columns in the referenceImage
-        
+
         :param outFormat: file extension of the reprojected, mosaicked and clipped images (i.e. GTiff for GeoTiff)
-        
+
         :param scale:  scale factor to transform the original HDF data into scaled data (included below, user need not enter)
-        
+
         :param varNames:  names of each of the datasets in the HDF file (included below, user need not enter)
-        
+
         :param qualityBand:  flag for the location of the quality dataset in the original HDF file
-        
-        
+
+
 		"""
 
         self.directory = directory
         self.fullPath = directory + '/' + dataset  ###how else to connect path?
         self.username = username
         self.password = password
-        self.url = 'http://e4ftl01.cr.usgs.gov'
+        self.url = 'https://e4ftl01.cr.usgs.gov'
         self.path = 'MOLT'
         self.dataset = dataset
         self.subset = subset
@@ -179,16 +179,16 @@ class ModisImageBase(object):
 
         """
 		Download images for specified tiles and time period.
-		
+
 		:param filelist: lists all of the HDF files downloaded
-		
+
 		:param observations:  lists the total number of days worth of data downloaded
 			(e.g. 1 year of data = 23 observations).
 			(e.g. 1 year of data = 23 observations).
 		"""
 
-        if self.downloadF is not None and not self.downloadF:
-            logging.debug('download return,downloadF is false')
+        if self.downloadF is not None and self.downloadF:
+            logging.debug('download return,downloadF is true')
             db = ShelveWrapper(self.dbName)
             self.filelist = db.read('filelist')
             self.observations = int(str(db.read('observations')))
@@ -207,7 +207,7 @@ class ModisImageBase(object):
         logging.debug('downloading is start,dataset:%s' % self.dataset)
         dm = pymodis.downmodis.downModis(self.fullPath, self.password, self.username, self.url, self.tiles, self.path,
                                          self.dataset,
-                                         self.today, self.enddate, jpg=False, debug=True, timeout=30)
+                                         self.today, self.enddate, jpg=False, debug=True, timeout=120)
         dm.connect()
 
         self.fill_args(dm)
@@ -217,6 +217,7 @@ class ModisImageBase(object):
             'Downloading is complete!  %d HDF files of %s data for tiles %s were downloaded for the following days:  %s' % (
                 self.observations * len(self.tiles), str(self.dataset), str(self.tiles), str(self.filelist)))
 
+    # 拼接
     def mosaic(self):
 
         """
@@ -234,6 +235,7 @@ class ModisImageBase(object):
                 # 一个使用GDAL将modis数据从hdf格式拼接到GDAL格式的类
                 ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=[hdflist[i], hdflist[i + 1]],
                                                                 subset=self.subset, outformat='GTiff')
+                # MOD17A2H.A2022081.h25v08.006.2022194132857.hdf,MOD17A2H.A2022081.h26v08.006.2022194132857.hdf  ->  MOD17A2H.A2022081.mos.tif
                 ms.run(str(hdflist[i].split('.h')[0]) + 'mos.tif')
                 ms.write_vrt(output=str(hdflist[i].split('.h')[0]), separate=True)
             mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
@@ -245,9 +247,9 @@ class ModisImageBase(object):
     def convert(self):
 
         """
-		This function converts the HDF files into the file extension of the 
-		referenceImage.  It projects images into the projection of the referenceImage using the vrt files produced in the mosaic step.  
-        If no vrt files were produced in the previous step, it converts the original hdf files.  
+		This function converts the HDF files into the file extension of the
+		referenceImage.  It projects images into the projection of the referenceImage using the vrt files produced in the mosaic step.
+        If no vrt files were produced in the previous step, it converts the original hdf files.
 
 		这个函数将HDF文件转换为referenceImage的文件扩展名。它使用拼接步骤中生成的vrt文件将图像投射到referenceImage的投影中。
 		如果在上一步中没有生成vrt文件，它将转换原始的hdf文件。
@@ -396,7 +398,7 @@ class ModisImageBase(object):
                       (self.dataset, str(self.fillValue)))
 
         # apply fill values
-        if self.dataset == 'MOD15A2.005' or self.dataset == 'MOD17A2.005':
+        if self.dataset == 'MOD15A2.005' or self.dataset == 'MOD17A2H.005':
             DC[DC > self.fillValue] = 9999.0
         if self.dataset == 'MOD11A2.005':
             DC[:, 0][DC[:, 0] == self.fillValue] = 9999.0  # this should have fixed it!
@@ -432,7 +434,7 @@ class ModisImageBase(object):
     def quality(self):
 
         """
-        This function applies the MODIS quality mask to the dataset.  
+        This function applies the MODIS quality mask to the dataset.
         Masked pixels are given a value of 9999.0.
         该函数将MODIS质量掩码应用于数据集。蒙面像素的值为9999.0。
         """
@@ -563,13 +565,14 @@ class ModisImageBase(object):
             'QualityCheck complete,DataSet:%s.See file qualityCheck%s.txt for detailed information about the final matrix.' % (
                 self.dataset, self.dataset))
 
-    def prepare(self):
+    # 数据预处理
+    def pre_process(self):
         # 下载数据
         self.download()
         # 拼接
         self.mosaic()
-        # 投影 转换成参考图像的扩展名
-        # self.convert()
+        # 投影 转换成参考图像的坐标投影
+        self.convert()
         # 裁剪 成参考图像的大小
         self.clip()
         # 转成矩阵
@@ -598,6 +601,7 @@ class ModisImageBase(object):
         lat = np.empty(shape=(arr.shape[0], arr.shape[1]))
         lon = np.empty(shape=(arr.shape[0], arr.shape[1]))
 
+        # 提取坐标，单独存到两个一维数组中，存在重复经纬度，如 [[1,2,3],[1,2,3],[1,2,3]]
         for row in range(arr.shape[0]):
             for col in range(arr.shape[1]):
                 coor = pixel2coord(row, col)
@@ -744,7 +748,7 @@ class MOD13Q1(ModisImageBase):
         super().__init__(directory, username, password, dataset, subset, tiles, today, enddate, referenceImage, scale,
                          varNames, qualityBand, fillValue, downloadF, dbName)
 
-    def prepare(self):
+    def pre_process(self):
         # 下载数据
         self.download()
         # 拼接
@@ -970,17 +974,17 @@ class MOD15A2(ModisImageBase):
         return 'MOD15A2'
 
 
-class MOD17A2(ModisImageBase):
+class MOD17A2H(ModisImageBase):
 
     def __init__(self, directory, username, password, dataset, subset, tiles, today, enddate, referenceImage,
                  downloadF):
-        scale = [.0001, .0001, 1]
-        varNames = ['GP', 'PSN', 'Quality']
+        scale = [0.0001]
+        varNames = ['Gpp_500m']
         qualityBand = 2
         fillValue = 30000
         # 是否需要再下载数据
 
-        dbName = MOD17A2.imageType()
+        dbName = MOD17A2H.imageType()
 
         super().__init__(directory, username, password, dataset, subset, tiles, today, enddate, referenceImage, scale,
                          varNames, qualityBand, fillValue, downloadF, dbName)

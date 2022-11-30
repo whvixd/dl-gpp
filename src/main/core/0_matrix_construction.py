@@ -16,6 +16,7 @@ tiles = a[4].split()
 today = a[5]
 enddate = a[6]
 # 让输出成的文件格式以它为标准
+# arcmap创建空间参考图像 https://desktop.arcgis.com/zh-cn/arcmap/latest/tools/data-management-toolbox/create-spatial-reference.htm
 referenceImage = a[7]
 downloadF = a[8]
 # python -u 0_matrix_construction.py 1 /data/emily/SL
@@ -34,14 +35,16 @@ if spectral == '0':
                        subset='1 1 1 0 0 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    mod17 = ap.MOD17A2(directory=directory, username=username, password=password, dataset='MOD17A2.005',
-                       subset='1 1 1 0 0 0 0 0 0 0 0 0',
-                       tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
+    mod17 = ap.MOD17A2H(directory=directory, username=username, password=password, dataset='MOD17A2H.005',
+                        subset='1 1 1 0 0 0 0 0 0 0 0 0',
+                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    mod11.prepare()
-    mod13.prepare()
-    mod15.prepare()
-    mod17.prepare()
+    # https://www.jianshu.com/p/821c741ff169
+    # https://www.cnblogs.com/suoyike1001/p/15244791.html
+    mod11.pre_process()
+    mod13.pre_process()
+    mod15.pre_process()
+    mod17.pre_process()
     mod17.finalMatrix()
 
 if spectral == '1':
@@ -54,7 +57,7 @@ if spectral == '1':
                        subset='1 1 1 1 1 1 1 0 0 0 0 1 0',
                        tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    mod09.prepare()
+    mod09.pre_process()
     if os.path.isfile(directory + '/MOD13Q1.006.npy'):
         subprocess.call(['cp', directory + 'MOD13Q1.npy', directory + 'MOD13Q1.txt', directory + '/spectral'])
     else:
@@ -62,7 +65,7 @@ if spectral == '1':
                            dataset='MOD13Q1.006', subset='1 1 1 0 0 0 0 0 0 0 0 1',
                            tiles=tiles, today=today, enddate=enddate, referenceImage=referenceImage,
                            downloadF=downloadF)
-        mod13.prepare()
+        mod13.pre_process()
 
     # 合并到一个矩阵中
     mod09.finalMatrixFunction()

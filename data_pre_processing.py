@@ -116,5 +116,5 @@ class MOD17A2():
                            str(self.tiles), mosaicCount))
 
     def imageType(self):
-        return 'MOD17A2'
+        return 'MOD17A2H'
 
