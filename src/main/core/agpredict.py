@@ -146,12 +146,12 @@ class ModisImageBase(object):
         self.referenceImagePath = referenceImage
         self.extent = self.fullPath + '/referenceExtent.shp'
         self.referenceImage = gdal.Open(referenceImage)
-        self.projection = self.referenceImage.GetProjection()
-        gt = self.referenceImage.GetGeoTransform()
-        self.resolution = gt[1]
-        self.rows = self.referenceImage.RasterYSize
-        self.columns = self.referenceImage.RasterXSize
-        self.outformat = self.referenceImage.GetDriver().ShortName
+        self.projection = self.referenceImage.GetProjection() # 投影信息(坐标系) https://zhaoxuhui.top/blog/2019/07/17/GeoTIFFReading&WritingWithGDAL.html
+        gt = self.referenceImage.GetGeoTransform() # https://www.osgeo.cn/gdal/tutorials/geotransforms_tut.html 地理变换是从图像坐标空间（行、列），也称为（像素、线）到地理参考坐标空间（投影或地理坐标）的仿射变换。
+        self.resolution = gt[1] # 分辨率
+        self.rows = self.referenceImage.RasterYSize # Y的大小，多少行
+        self.columns = self.referenceImage.RasterXSize # X的大小，多少列
+        self.outformat = self.referenceImage.GetDriver().ShortName # GTiff
 
         self.scale = scale
         self.varNames = varNames
@@ -257,18 +257,22 @@ class ModisImageBase(object):
 
         logging.debug('Convert start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
 
-        vrtlist = sorted(glob.glob(self.fullPath + '/*vrt'))
+        vrtlist = sorted(glob.glob(self.fullPath + '/*vrt')) # 文件中包含由哪些原始的hdf文件组成
         splitAt = len(self.fullPath) + 1
 
         if len(vrtlist) != 0:
             for i in range(0, len(vrtlist)):
-                prefix = str(vrtlist[i].split(".vrt")[0])
-                prefix = prefix[:splitAt] + 'full' + prefix[splitAt:]
-                ct = pymodis.convertmodis_gdal.convertModisGDAL(hdfname=vrtlist[i],
+                # GADL 图像描述文件信息 MOD17A2H.A2022089_Gpp_500m.vrt
+                prefix = str(vrtlist[i].split(".vrt")[0]) # MOD17A2H.A2022089_Gpp_500m
+                prefix = prefix[:splitAt] + 'full' + prefix[splitAt:] # fullMOD17A2H.A2022065_Gpp_500m
+                ct = pymodis.convertmodis_gdal.convertModisGDAL(hdfname=vrtlist[i], # MOD17A2H.A2022089_Gpp_500m.vrt
                                                                 prefix=prefix, subset=self.subset, res=self.resolution,
                                                                 outformat=self.outformat, wkt=self.projection,
                                                                 resampl='NEAREST_NEIGHBOR', vrt=True)
+                # 转成参考图像的大小，包含坐标系，重新生成fullMOD17A2H.A2022065_Gpp_500m.tif文件，生成的文件由原来的23M变成了98M？
                 ct.run()
+
+            # 删除原始的tif，xml，vrt文件
             mosdel = glob.glob(self.fullPath + '/*mos.tif')
             for f in mosdel:
                 os.remove(f)
@@ -285,6 +289,7 @@ class ModisImageBase(object):
                 'Conversion complete! DataSet:%s, The %d bands of %d mosaicked images were successfully converted to %d %s files.' % (
                     self.dataset, dataCount, len(vrtlist), tifCount, str(self.outformat)))
 
+        # 如果vrt没有，重新解析hdf转成tif，再生成
         if len(vrtlist) == 0:
 
             hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))

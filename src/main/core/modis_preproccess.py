@@ -36,7 +36,9 @@ def start():
     # 批下载
     # mod17.download()
     # 拼接
-    mod17.mosaic()
+    # mod17.mosaic()
+    # 重投影，转成参考图像格式tif文件
+    mod17.convert()
     # mod17.finalMatrixFunction()
 
 
