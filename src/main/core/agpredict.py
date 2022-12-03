@@ -360,6 +360,7 @@ class ModisImageBase(object):
                 self.dataset, len(dataNames), str(self.outformat), str(self.referenceImagePath), test.shape[0],
                 test.shape[1]))
 
+    # 将tif文件转成数组，并存储到本地txt文件中，metadata_dataset.txt
     def matrix(self):
 
         """
@@ -383,7 +384,7 @@ class ModisImageBase(object):
 
         logging.debug('combining data start, DataSet:%s,rows:%d,columns:%d,observations:%d,count(subset==1):%d' %
                       (self.dataset, self.rows, self.columns, self.observations, subsetInt.count(1)))
-        # 数据类型
+        # 同band，DC的纬度：(band,time,pix)=data
         for i in range(dataCount):
             name = str(dataNames[i])
             # 原来是两个步长，我现在用半个月的数据，这里的dataList.size()是等于observations
@@ -436,6 +437,7 @@ class ModisImageBase(object):
         for t in tif:
             os.remove(t)
 
+    # 对于有QC列的数据，mask质量差的元素和9999的元素，最后填充9999.0
     def quality(self):
 
         """
@@ -454,19 +456,24 @@ class ModisImageBase(object):
         # qualityBand number of subset
         q = columnNames.index('Quality')
 
+        # 有Quality变量，进行较正，保存npy文件，{dataset}.npy
         if subsetInt[self.qualityBand] == 1:
             dataCount = self.subset.count('1')
             QC = np.repeat(self.DC[:, q].reshape((self.DC.shape[0], 1)), dataCount - 1, axis=1)
             if self.dataset == 'MOD09A1.006' or self.dataset == 'MOD13Q1.006':
                 QC = np.uint16(QC)
             else:
+                # 将八位2进制转成8进制，则0B00000001 & 1=1（质量差的）
+                # https://blog.csdn.net/qq_39085138/article/details/110880387
                 QC = np.uint8(QC)
 
             QCm = QC & 1  # flips DCm mask
+            # 按列删除Quality那个band
             DCm = np.delete(self.DC, q, 1)  # looks good
 
-            DCm = np.ma.masked_where(QCm == 1, DCm)
-            DCm = np.ma.masked_where(DCm == 9999.0, DCm)
+            # 标记mask元素，为True
+            DCm = np.ma.masked_where(QCm == 1, DCm) # 质量差的
+            DCm = np.ma.masked_where(DCm == 9999.0, DCm) # 9999的
 
             obs: int = 0
             if len(self.tiles) > 1:
@@ -479,7 +486,9 @@ class ModisImageBase(object):
                 cfull = DCm[:, b].reshape((self.observations, self.rows, self.columns))
                 b16 = np.empty(shape=(self.rows * self.columns * obs, 0))
                 for band in range(0, cfull.shape[0], 2):
-                    c16 = np.ma.mean(cfull[band:band + 1, :, :], axis=0)
+                    # axis=0，mean对于三维数组没有意义，还是本身自己，只是转成了float类型了
+                    c16 = np.ma.mean(cfull[band:band + 1, :, :], axis=0) # http://t.csdn.cn/D4Pe6 np中的 axis
+                    # mask标志的元素填充为9999.0
                     c16f = np.ma.filled(c16, 9999.0).astype(float).reshape((self.rows * self.columns))
                     b16 = np.append(b16, c16f)
                 outArray = np.append(outArray, b16.reshape((obs * self.rows * self.columns, 1)), axis=1)
@@ -500,6 +509,7 @@ class ModisImageBase(object):
                 'DataSet:%s.The final 16-day interval quality-masked matrix was created successfully.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
                     self.dataset, self.finalDC.shape[0], self.finalDC.shape[1], var))
 
+        # 无Quality变量
         if subsetInt[self.qualityBand] != 1:
             cleanDC = np.delete(self.DC, q, 1)
 
@@ -518,6 +528,7 @@ class ModisImageBase(object):
                     band16 = np.append(b16, c16, axis=0)
                 outArray = np.append(outArray, b16.reshape((obs * self.rows * self.columns, 1)), axis=1)
 
+            # 保存 finalDC
             np.save(self.directory + '/' + self.dataset + '.npy', self.finalDC)
             del cleanDC, outArray
 
@@ -532,6 +543,7 @@ class ModisImageBase(object):
                 'DataSet:%s.The final 16-day interval matrix was created successfully.  A quality mask was not applied, though remaining no data values are set at 9999.  This matrix has dimensions %d rows by %d columns.  Datasets included in the matrix are %s' % (
                     self.dataset, self.finalDC.shape[0], self.finalDC.shape[1], var))
 
+    # 打印出各{dataset}.npy max,min,mean情况，保存到qualityCheck{dataset}.txt
     def qualityCheck(self):
         logging.debug('QualityCheck start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         d = self.fullPath
@@ -574,17 +586,21 @@ class ModisImageBase(object):
     def pre_process(self):
         # 下载数据
         self.download()
-        # 拼接
+        # 将同一时刻的不同tile拼接在一起，生成mos{dataset}_{band}.tif，vrt，xml文件
         self.mosaic()
-        # 投影 转换成参考图像的坐标投影
+        # 投影 转换成参考图像的坐标投影，生成full{dataset}_{band}.tif，删除mosaic函数生成的文件
         self.convert()
-        # 裁剪 成参考图像的大小
+        # 裁剪 成参考图像的大小，full{dataset}_{band}.tif
         self.clip()
-        # 转成矩阵
+        # 将tif文件转成数组，并存储到本地txt文件中，生成metadata_dataset.txt，删除full{dataset}_{band}.tif
         self.matrix()
+        # 控制控制，对于有QC列的数据，mask质量差的元素和9999的元素，最后填充9999.0，生成{dataset}.npy
         self.quality()
+        # 打印出各{dataset}.npy max,min,mean情况，保存到qualityCheck{dataset}.txt
         self.qualityCheck()
 
+    # 将所有的{dataset}.npy 保存在一个文件中，finalMatrix.npy，二位数组，[Id,v1,v2..vn,lat,lon,time] (var,time*lan*lon)
+    # 这种存储方式，如同一时刻，1,2,3度经度和1,2,3,4,5度纬度，则存储一个变量值需要,3*5*3=45，若使用三维存储(time,lan,lon)，则3*5=15，夸大了3倍，存储冗余空间
     def finalMatrixFunction(self):
         logging.debug('FinalMatrixFunction start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
         obs: int = 0

@@ -32,14 +32,16 @@ def start():
                         subset='1 0 0',
                         tiles=china_tiles, today=today, enddate=enddate, referenceImage=referenceImage, downloadF=downloadF)
 
-    # mod17.pre_process()
+    mod17.pre_process()
     # 批下载
     # mod17.download()
     # 拼接
     # mod17.mosaic()
     # 重投影，转成参考图像格式tif文件
-    mod17.convert()
-    # mod17.finalMatrixFunction()
+    # mod17.convert()
+    mod17.clip()()
+    # 将所有的{dataset}.npy 保存在一个文件中，finalMatrix.npy
+    mod17.finalMatrixFunction()
 
 
 if __name__ == '__main__':
