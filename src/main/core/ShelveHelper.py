@@ -4,7 +4,7 @@ import shelve
 class ShelveWrapper:
 
     def __init__(self, db_name):
-        self.db_name = db_name
+        self.db_name = "../db/"+db_name
 
     def insert_batch(self, **kwargs):
         with shelve.open(self.db_name) as db:

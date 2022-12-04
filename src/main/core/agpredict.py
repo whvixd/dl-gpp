@@ -138,8 +138,8 @@ class ModisImageBase(object):
         self.dataset = dataset
         self.subset = subset
         self.tiles = tiles
-        if len(self.tiles) > 2:
-            raise IOError("A maximum of two MODIS tiles can be included. Please remove extra tiles")
+        # if len(self.tiles) > 2:
+        #     raise IOError("A maximum of two MODIS tiles can be included. Please remove extra tiles")
         self.today = today
         self.enddate = enddate
 
@@ -1001,7 +1001,7 @@ class MOD17A2H(ModisImageBase):
                  downloadF):
         scale = [0.0001]
         varNames = ['Gpp_500m']
-        qualityBand = 2
+        qualityBand = None
         fillValue = 30000
         # 是否需要再下载数据
 
