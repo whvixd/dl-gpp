@@ -144,7 +144,7 @@ class ModisImageBase(object):
         self.enddate = enddate
 
         self.referenceImagePath = referenceImage
-        self.extent = self.fullPath + '/referenceExtent.shp'
+        self.extent = self.fullPath + '/chinaRefExt.shp'
         self.referenceImage = gdal.Open(referenceImage)
         self.projection = self.referenceImage.GetProjection() # 投影信息(坐标系) https://zhaoxuhui.top/blog/2019/07/17/GeoTIFFReading&WritingWithGDAL.html
         gt = self.referenceImage.GetGeoTransform() # https://www.osgeo.cn/gdal/tutorials/geotransforms_tut.html 地理变换是从图像坐标空间（行、列），也称为（像素、线）到地理参考坐标空间（投影或地理坐标）的仿射变换。
@@ -339,6 +339,7 @@ class ModisImageBase(object):
 
         logging.debug('Clip start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
 
+        # 按照参考图生成extent文件
         subprocess.call(['gdaltindex', self.extent, self.referenceImagePath])
         dataNames = sorted(glob.glob(self.fullPath + '/full*.tif'))
         splitAt = len(self.fullPath) + 1
@@ -1009,6 +1010,33 @@ class MOD17A2H(ModisImageBase):
 
         super().__init__(directory, username, password, dataset, subset, tiles, today, enddate, referenceImage, scale,
                          varNames, qualityBand, fillValue, downloadF, dbName)
+
+        # 拼接
+    def mosaic(self):
+
+        """
+        If more than two tiles are input by the user, this function mosaics the tiles
+        together.		如果用户输入的图像块超过两个，则该函数将这些图像块拼接在一起。
+        """
+
+        logging.debug('Mosaic start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
+        if len(self.tiles) > 1:
+            # 获取所有的hdf文件
+            hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
+
+            # i:0,2
+            for i in range(0, len(hdflist), self.tiles):
+                # 一个使用GDAL将modis数据从hdf格式拼接到GDAL格式的类
+                ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=[hdflist[j] for j in range(i+self.tiles)],
+                                                                subset=self.subset, outformat='GTiff')
+                # MOD17A2H.A2022081.h25v08.006.2022194132857.hdf,MOD17A2H.A2022081.h26v08.006.2022194132857.hdf  ->  MOD17A2H.A2022081.mos.tif
+                ms.run(str(hdflist[i].split('.h')[0]) + 'mos.tif')
+                ms.write_vrt(output=str(hdflist[i].split('.h')[0]), separate=True)
+            mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
+
+            logging.info(
+                'Mosaic complete! DataSet:%s, MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
+                    self.dataset, str(self.tiles), mosaicCount))
 
     @staticmethod
     def imageType():
