@@ -1040,11 +1040,13 @@ class MOD17A2H(ModisImageBase):
             hdfnames = [hdflist[j] for j in range(i, i + len_tiles)]
             try:
                 # 一个使用GDAL将modis数据从hdf格式拼接到GDAL格式的类
-                ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=hdfnames,subset=self.subset, outformat='GTiff')
+                ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=hdfnames, subset=self.subset,
+                                                                outformat='GTiff')
                 ms.run(mos_tif)  # 需要hdf.xml文件
                 ms.write_vrt(output=str(hdflist[i].split('.h')[0]), separate=True)
             except Exception as e:
-                logging.error('Mosaic process error,mos_tif is %s, i:%d, hdfnames:%s, e is %s' % (mos_tif,i,hdfnames,e))
+                logging.error(
+                    'Mosaic process error,mos_tif is %s, i:%d, hdfnames:%s, e is %s' % (mos_tif, i, hdfnames, e))
         mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
         logging.info(
             'Mosaic complete! DataSet:%s, MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
@@ -1058,7 +1060,7 @@ class MOD17A2H(ModisImageBase):
         i = 1
         miss_file_flag = False
         for x in range(len(hdflist)):
-            h=hdflist[x]
+            h = hdflist[x]
             curr_time_seq = str(h.split('.h')[0])
             if pre_time_seq is None:
                 pre_time_seq = curr_time_seq
@@ -1068,27 +1070,41 @@ class MOD17A2H(ModisImageBase):
             else:
                 if i % len_tiles != 0:
                     # 记录丢失了哪些tile
-                    curr_tile_hdf_file=hdflist[x-i:x]
+                    curr_tile_hdf_file = hdflist[x - i:x]
                     curr_tiles = []
                     for file_ in curr_tile_hdf_file:
                         tile = str(file_.split('.')[3])
                         curr_tiles.append(tile)
-                    miss_tiles=[]
+                    miss_tiles = []
                     for tile in self.tiles:
                         if tile not in curr_tiles:
                             miss_tiles.append(tile)
                     miss_file_flag = True
                     logging.warning("missing file,time_seq:%s,i:%d,real_miss_file:%s" % (
-                    curr_tile_hdf_file[0].split('.')[2], i, miss_tiles))
+                        curr_tile_hdf_file[0].split('.')[2], i, miss_tiles))
                     # A2000049:2000.02.18(https://e4ftl01.cr.usgs.gov/MOLT/MOD17A2H.006/),没有记录丢失的那些tile
                 i = 1
                 pre_time_seq = curr_time_seq
         if miss_file_flag:
             raise IOError("missing file,please check again")
-        # 校验xml文件是否存在
+        # 校验xml文件是否存在、空文件
+        illegal_files = []
         for hdf in hdflist:
-            if not os.path.exists(hdf + ".xml"):
-                raise IOError("%s not exist" % str(hdf + ".xml"))
+            hdf_xml = hdf + ".xml"
+            if not os.path.exists(hdf_xml):
+                illegal_files.append(hdf_xml)
+                logging.warning("%s not exist" % str(hdf_xml))
+            size = os.path.getsize(hdf)
+            if size < 1000:
+                illegal_files.append(hdf)
+                logging.warning("%s size is illegal,size:%d" % (hdf, size))
+            size = os.path.getsize(hdf_xml)
+            if size < 100:
+                illegal_files.append(hdf_xml)
+                logging.warning("%s size is illegal,size:%d" % (hdf_xml, size))
+
+        if len(illegal_files) > 0:
+            raise IOError("%s size is illegal" % illegal_files)
 
     @staticmethod
     def imageType():
