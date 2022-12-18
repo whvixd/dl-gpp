@@ -146,12 +146,12 @@ class ModisImageBase(object):
         self.referenceImagePath = referenceImage
         self.extent = self.fullPath + '/chinaRefExt.shp'
         self.referenceImage = gdal.Open(referenceImage)
-        self.projection = self.referenceImage.GetProjection() # 投影信息(坐标系) https://zhaoxuhui.top/blog/2019/07/17/GeoTIFFReading&WritingWithGDAL.html
-        gt = self.referenceImage.GetGeoTransform() # https://www.osgeo.cn/gdal/tutorials/geotransforms_tut.html 地理变换是从图像坐标空间（行、列），也称为（像素、线）到地理参考坐标空间（投影或地理坐标）的仿射变换。
-        self.resolution = gt[1] # 分辨率
-        self.rows = self.referenceImage.RasterYSize # Y的大小，多少行
-        self.columns = self.referenceImage.RasterXSize # X的大小，多少列
-        self.outformat = self.referenceImage.GetDriver().ShortName # GTiff
+        self.projection = self.referenceImage.GetProjection()  # 投影信息(坐标系) https://zhaoxuhui.top/blog/2019/07/17/GeoTIFFReading&WritingWithGDAL.html
+        gt = self.referenceImage.GetGeoTransform()  # https://www.osgeo.cn/gdal/tutorials/geotransforms_tut.html 地理变换是从图像坐标空间（行、列），也称为（像素、线）到地理参考坐标空间（投影或地理坐标）的仿射变换。
+        self.resolution = gt[1]  # 分辨率
+        self.rows = self.referenceImage.RasterYSize  # Y的大小，多少行
+        self.columns = self.referenceImage.RasterXSize  # X的大小，多少列
+        self.outformat = self.referenceImage.GetDriver().ShortName  # GTiff
 
         self.scale = scale
         self.varNames = varNames
@@ -169,11 +169,12 @@ class ModisImageBase(object):
         db.insert('filelist', self.filelist)
         db.insert('observations', self.observations)
 
-        if self.dataset != 'MOD13Q1.006':
-            if self.observations % 2 != 0:
-                raise IOError(
-                    "The total number of observations through time must be an even number. Please add or remove an observation before or after %s" % str(
-                        self.filelist[0]))
+        # fixme 不用这么校验
+        # if self.dataset != 'MOD13Q1.006':
+        #     if self.observations % 2 != 0:
+        #         raise IOError(
+        #             "The total number of observations through time must be an even number. Please add or remove an observation before or after %s" % str(
+        #                 self.filelist[0]))
 
     def download(self):
 
@@ -257,15 +258,15 @@ class ModisImageBase(object):
 
         logging.debug('Convert start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
 
-        vrtlist = sorted(glob.glob(self.fullPath + '/*vrt')) # 文件中包含由哪些原始的hdf文件组成
+        vrtlist = sorted(glob.glob(self.fullPath + '/*vrt'))  # 文件中包含由哪些原始的hdf文件组成
         splitAt = len(self.fullPath) + 1
 
         if len(vrtlist) != 0:
             for i in range(0, len(vrtlist)):
                 # GADL 图像描述文件信息 MOD17A2H.A2022089_Gpp_500m.vrt
-                prefix = str(vrtlist[i].split(".vrt")[0]) # MOD17A2H.A2022089_Gpp_500m
-                prefix = prefix[:splitAt] + 'full' + prefix[splitAt:] # fullMOD17A2H.A2022065_Gpp_500m
-                ct = pymodis.convertmodis_gdal.convertModisGDAL(hdfname=vrtlist[i], # MOD17A2H.A2022089_Gpp_500m.vrt
+                prefix = str(vrtlist[i].split(".vrt")[0])  # MOD17A2H.A2022089_Gpp_500m
+                prefix = prefix[:splitAt] + 'full' + prefix[splitAt:]  # fullMOD17A2H.A2022065_Gpp_500m
+                ct = pymodis.convertmodis_gdal.convertModisGDAL(hdfname=vrtlist[i],  # MOD17A2H.A2022089_Gpp_500m.vrt
                                                                 prefix=prefix, subset=self.subset, res=self.resolution,
                                                                 outformat=self.outformat, wkt=self.projection,
                                                                 resampl='NEAREST_NEIGHBOR', vrt=True)
@@ -473,8 +474,8 @@ class ModisImageBase(object):
             DCm = np.delete(self.DC, q, 1)  # looks good
 
             # 标记mask元素，为True
-            DCm = np.ma.masked_where(QCm == 1, DCm) # 质量差的
-            DCm = np.ma.masked_where(DCm == 9999.0, DCm) # 9999的
+            DCm = np.ma.masked_where(QCm == 1, DCm)  # 质量差的
+            DCm = np.ma.masked_where(DCm == 9999.0, DCm)  # 9999的
 
             obs: int = 0
             if len(self.tiles) > 1:
@@ -488,7 +489,7 @@ class ModisImageBase(object):
                 b16 = np.empty(shape=(self.rows * self.columns * obs, 0))
                 for band in range(0, cfull.shape[0], 2):
                     # axis=0，mean对于三维数组没有意义，还是本身自己，只是转成了float类型了
-                    c16 = np.ma.mean(cfull[band:band + 1, :, :], axis=0) # http://t.csdn.cn/D4Pe6 np中的 axis
+                    c16 = np.ma.mean(cfull[band:band + 1, :, :], axis=0)  # http://t.csdn.cn/D4Pe6 np中的 axis
                     # mask标志的元素填充为9999.0
                     c16f = np.ma.filled(c16, 9999.0).astype(float).reshape((self.rows * self.columns))
                     b16 = np.append(b16, c16f)
@@ -1012,6 +1013,7 @@ class MOD17A2H(ModisImageBase):
                          varNames, qualityBand, fillValue, downloadF, dbName)
 
         # 拼接
+
     def mosaic(self):
 
         """
@@ -1020,23 +1022,73 @@ class MOD17A2H(ModisImageBase):
         """
 
         logging.debug('Mosaic start! DataSet:%s,tiles:%s .' % (self.dataset, str(self.tiles)))
-        if len(self.tiles) > 1:
-            # 获取所有的hdf文件
-            hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
+        # 前置校验
+        self.check_mosaic()
+        hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
+        len_tiles = len(self.tiles)
+        if len_tiles <= 1:
+            pass
+        logging.debug('Mosaic process! hdflist_len:%d, len_tiles:%d.' % (len(hdflist), len_tiles))
 
-            # i:0,2
-            for i in range(0, len(hdflist), self.tiles):
+        for i in range(0, len(hdflist), len_tiles):
+            # MOD17A2H.A2022081.h25v08.006.2022194132857.hdf,MOD17A2H.A2022081.h26v08.006.2022194132857.hdf  ->  MOD17A2H.A2022081.mos.tif
+            mos_tif = str(hdflist[i].split('.h')[0]) + 'mos.tif'
+            mos_tif_exist = os.path.exists(mos_tif)
+            if mos_tif_exist:
+                logging.info('Mosaic process,%s exists.' % mos_tif)
+                continue
+            hdfnames = [hdflist[j] for j in range(i, i + len_tiles)]
+            try:
                 # 一个使用GDAL将modis数据从hdf格式拼接到GDAL格式的类
-                ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=[hdflist[j] for j in range(i+self.tiles)],
-                                                                subset=self.subset, outformat='GTiff')
-                # MOD17A2H.A2022081.h25v08.006.2022194132857.hdf,MOD17A2H.A2022081.h26v08.006.2022194132857.hdf  ->  MOD17A2H.A2022081.mos.tif
-                ms.run(str(hdflist[i].split('.h')[0]) + 'mos.tif')
+                ms = pymodis.convertmodis_gdal.createMosaicGDAL(hdfnames=hdfnames,subset=self.subset, outformat='GTiff')
+                ms.run(mos_tif)  # 需要hdf.xml文件
                 ms.write_vrt(output=str(hdflist[i].split('.h')[0]), separate=True)
-            mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
+            except Exception as e:
+                logging.error('Mosaic process error,mos_tif is %s, i:%d, hdfnames:%s, e is %s' % (mos_tif,i,hdfnames,e))
+        mosaicCount = len(glob.glob(self.fullPath + '/*mos.tif'))
+        logging.info(
+            'Mosaic complete! DataSet:%s, MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
+                self.dataset, str(self.tiles), mosaicCount))
 
-            logging.info(
-                'Mosaic complete! DataSet:%s, MODIS tiles %s were successfully mosaicked into %d mosaic images.' % (
-                    self.dataset, str(self.tiles), mosaicCount))
+    def check_mosaic(self):
+        len_tiles = len(self.tiles)
+        # 获取所有的hdf文件
+        hdflist = sorted(glob.glob(self.fullPath + '/*.hdf'))
+        pre_time_seq = None
+        i = 1
+        miss_file_flag = False
+        for x in range(len(hdflist)):
+            h=hdflist[x]
+            curr_time_seq = str(h.split('.h')[0])
+            if pre_time_seq is None:
+                pre_time_seq = curr_time_seq
+                continue
+            if pre_time_seq == curr_time_seq:
+                i = i + 1
+            else:
+                if i % len_tiles != 0:
+                    # 记录丢失了哪些tile
+                    curr_tile_hdf_file=hdflist[x-i:x]
+                    curr_tiles = []
+                    for file_ in curr_tile_hdf_file:
+                        tile = str(file_.split('.')[3])
+                        curr_tiles.append(tile)
+                    miss_tiles=[]
+                    for tile in self.tiles:
+                        if tile not in curr_tiles:
+                            miss_tiles.append(tile)
+                    miss_file_flag = True
+                    logging.warning("missing file,time_seq:%s,i:%d,real_miss_file:%s" % (
+                    curr_tile_hdf_file[0].split('.')[2], i, miss_tiles))
+                    # A2000049:2000.02.18(https://e4ftl01.cr.usgs.gov/MOLT/MOD17A2H.006/),没有记录丢失的那些tile
+                i = 1
+                pre_time_seq = curr_time_seq
+        if miss_file_flag:
+            raise IOError("missing file,please check again")
+        # 校验xml文件是否存在
+        for hdf in hdflist:
+            if not os.path.exists(hdf + ".xml"):
+                raise IOError("%s not exist" % str(hdf + ".xml"))
 
     @staticmethod
     def imageType():
