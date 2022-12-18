@@ -1028,7 +1028,7 @@ class MOD17A2H(ModisImageBase):
         len_tiles = len(self.tiles)
         if len_tiles <= 1:
             pass
-        logging.debug('Mosaic process! hdflist_len:%d, len_tiles:%d.' % (len(hdflist), len_tiles))
+        logging.debug('Mosaic check pas and process! hdflist_len:%d, len_tiles:%d.' % (len(hdflist), len_tiles))
 
         for i in range(0, len(hdflist), len_tiles):
             # MOD17A2H.A2022081.h25v08.006.2022194132857.hdf,MOD17A2H.A2022081.h26v08.006.2022194132857.hdf  ->  MOD17A2H.A2022081.mos.tif

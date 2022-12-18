@@ -72,7 +72,7 @@ def start_gpp():
 
 
     # 下载数据
-    mod17.download()
+    # mod17.download()
     # 将同一时刻的不同tile拼接在一起，生成mos{dataset}_{band}.tif，vrt，xml文件
     mod17.mosaic()
     # 投影 转换成参考图像的坐标投影，生成full{dataset}_{band}.tif，删除mosaic函数生成的文件
